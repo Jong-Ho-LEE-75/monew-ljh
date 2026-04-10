@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:monew;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/monew-test
+      auto-index-creation: true
