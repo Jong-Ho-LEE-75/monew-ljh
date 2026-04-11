@@ -16,10 +16,21 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
         select n from Notification n
         where n.user.id = :userId
           and n.confirmed = false
-          and (:cursor is null or n.createdAt < :cursor)
         order by n.createdAt desc
         """)
-    List<Notification> findUnconfirmedPage(
+    List<Notification> findFirstUnconfirmedPage(
+        @Param("userId") UUID userId,
+        Pageable pageable
+    );
+
+    @Query("""
+        select n from Notification n
+        where n.user.id = :userId
+          and n.confirmed = false
+          and n.createdAt < :cursor
+        order by n.createdAt desc
+        """)
+    List<Notification> findUnconfirmedPageAfter(
         @Param("userId") UUID userId,
         @Param("cursor") Instant cursor,
         Pageable pageable

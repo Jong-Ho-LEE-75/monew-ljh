@@ -15,10 +15,21 @@ public interface CommentRepository extends JpaRepository<Comment, UUID> {
         select c from Comment c
         where c.article.id = :articleId
           and c.deleted = false
-          and (:cursor is null or c.createdAt < :cursor)
         order by c.createdAt desc
         """)
-    List<Comment> findPageByArticle(
+    List<Comment> findFirstPageByArticle(
+        @Param("articleId") UUID articleId,
+        Pageable pageable
+    );
+
+    @Query("""
+        select c from Comment c
+        where c.article.id = :articleId
+          and c.deleted = false
+          and c.createdAt < :cursor
+        order by c.createdAt desc
+        """)
+    List<Comment> findPageByArticleAfter(
         @Param("articleId") UUID articleId,
         @Param("cursor") Instant cursor,
         Pageable pageable
