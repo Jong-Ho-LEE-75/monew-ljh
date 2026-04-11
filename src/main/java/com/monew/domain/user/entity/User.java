@@ -4,6 +4,7 @@ import com.monew.common.entity.BaseUpdatableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,12 +28,16 @@ public class User extends BaseUpdatableEntity {
     @Column(nullable = false)
     private boolean deleted = false;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     @Builder
     private User(String email, String nickname, String password) {
         this.email = email;
         this.nickname = nickname;
         this.password = password;
         this.deleted = false;
+        this.deletedAt = null;
     }
 
     public void updateNickname(String nickname) {
@@ -41,5 +46,6 @@ public class User extends BaseUpdatableEntity {
 
     public void softDelete() {
         this.deleted = true;
+        this.deletedAt = Instant.now();
     }
 }
