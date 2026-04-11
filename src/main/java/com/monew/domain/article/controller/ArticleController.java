@@ -4,6 +4,7 @@ import com.monew.common.dto.CursorRequest;
 import com.monew.common.dto.PageResponse;
 import com.monew.domain.article.dto.ArticleDto;
 import com.monew.domain.article.dto.ArticleSearchCondition;
+import com.monew.domain.article.dto.ArticleSortBy;
 import com.monew.domain.article.dto.SortDirection;
 import com.monew.domain.article.service.ArticleService;
 import java.time.Instant;
@@ -36,13 +37,14 @@ public class ArticleController {
         @RequestParam(required = false) List<String> sourceIn,
         @RequestParam(required = false) Instant publishedFrom,
         @RequestParam(required = false) Instant publishedTo,
+        @RequestParam(required = false) ArticleSortBy sortBy,
         @RequestParam(required = false) SortDirection direction,
         @RequestParam(required = false) String cursor,
         @RequestParam(required = false) Integer size,
         @RequestHeader(value = USER_HEADER, required = false) UUID userId
     ) {
         ArticleSearchCondition condition = new ArticleSearchCondition(
-            keyword, sourceIn, publishedFrom, publishedTo, interestId, direction
+            keyword, sourceIn, publishedFrom, publishedTo, interestId, sortBy, direction
         );
         return ResponseEntity.ok(
             articleService.findAll(condition, new CursorRequest(cursor, size), userId)

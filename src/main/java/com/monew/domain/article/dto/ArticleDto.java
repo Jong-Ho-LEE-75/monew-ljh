@@ -13,6 +13,7 @@ public record ArticleDto(
     UUID interestId,
     String interestName,
     long viewCount,
+    long commentCount,
     boolean viewedByMe
 ) {
 

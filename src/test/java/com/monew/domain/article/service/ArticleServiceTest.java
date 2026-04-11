@@ -77,6 +77,7 @@ class ArticleServiceTest {
             null,
             null,
             article.getViewCount(),
+            article.getCommentCount(),
             viewed
         );
     }
@@ -97,7 +98,7 @@ class ArticleServiceTest {
             given(articleMapper.toDto(b, false)).willReturn(dto(b, false));
 
             ArticleSearchCondition condition = new ArticleSearchCondition(
-                null, null, null, null, null, null
+                null, null, null, null, null, null, null
             );
             PageResponse<ArticleDto> result = articleService.findAll(
                 condition, new CursorRequest(null, 10), null);

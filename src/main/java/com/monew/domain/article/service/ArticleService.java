@@ -4,6 +4,7 @@ import com.monew.common.dto.CursorRequest;
 import com.monew.common.dto.PageResponse;
 import com.monew.domain.article.dto.ArticleDto;
 import com.monew.domain.article.dto.ArticleSearchCondition;
+import com.monew.domain.article.dto.ArticleSortBy;
 import com.monew.domain.article.dto.SortDirection;
 import com.monew.domain.article.entity.Article;
 import com.monew.domain.article.entity.ArticleView;
@@ -46,17 +47,30 @@ public class ArticleService {
         UUID currentUserId
     ) {
         int size = cursorRequest.sizeOrDefault();
-        Instant cursor = parseCursor(cursorRequest.cursor());
+        ArticleSortBy sortBy = condition.sortByOrDefault();
+        Object cursor = parseCursor(cursorRequest.cursor(), sortBy);
         Specification<Article> spec = ArticleSpecifications.build(condition, cursor);
         Sort.Direction sortDirection = condition.directionOrDefault() == SortDirection.ASC
             ? Sort.Direction.ASC
             : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(0, size + 1, Sort.by(sortDirection, "publishedAt"));
+        Pageable pageable = PageRequest.of(0, size + 1, Sort.by(sortDirection, toSortField(sortBy)));
         List<Article> page = articleRepository.findAll(spec, pageable).getContent();
         List<ArticleDto> dtos = page.stream()
             .map(article -> articleMapper.toDto(article, isViewed(currentUserId, article.getId())))
             .toList();
-        return PageResponse.of(dtos, size, dto -> dto.publishedAt().toString());
+        return PageResponse.of(dtos, size, dto -> switch (sortBy) {
+            case VIEW_COUNT -> Long.toString(dto.viewCount());
+            case COMMENT_COUNT -> Long.toString(dto.commentCount());
+            default -> dto.publishedAt().toString();
+        });
+    }
+
+    private static String toSortField(ArticleSortBy sortBy) {
+        return switch (sortBy) {
+            case VIEW_COUNT -> "viewCount";
+            case COMMENT_COUNT -> "commentCount";
+            default -> "publishedAt";
+        };
     }
 
     @Transactional
@@ -115,10 +129,17 @@ public class ArticleService {
         return articleViewRepository.existsByArticle_IdAndUser_Id(articleId, userId);
     }
 
-    private Instant parseCursor(String cursor) {
+    private static Object parseCursor(String cursor, ArticleSortBy sortBy) {
         if (cursor == null || cursor.isBlank()) {
             return null;
         }
-        return Instant.parse(cursor);
+        try {
+            return switch (sortBy) {
+                case VIEW_COUNT, COMMENT_COUNT -> Long.parseLong(cursor);
+                default -> Instant.parse(cursor);
+            };
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
