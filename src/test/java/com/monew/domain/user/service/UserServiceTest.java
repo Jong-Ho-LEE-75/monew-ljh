@@ -18,6 +18,7 @@ import com.monew.domain.user.exception.UserNotFoundException;
 import com.monew.domain.user.mapper.UserMapper;
 import com.monew.domain.user.repository.UserRepository;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -208,6 +209,17 @@ class UserServiceTest {
             userService.softDelete(id);
 
             assertThat(user.isDeleted()).isTrue();
+            assertThat(user.getDeletedAt()).isNotNull();
+        }
+
+        @Test
+        void hardDeleteBefore_레포지토리_위임() {
+            Instant threshold = Instant.now().minus(1, ChronoUnit.DAYS);
+            given(userRepository.hardDeleteByDeletedAtBefore(threshold)).willReturn(2);
+
+            int deleted = userService.hardDeleteBefore(threshold);
+
+            assertThat(deleted).isEqualTo(2);
         }
 
         @Test

@@ -12,6 +12,7 @@ import com.monew.domain.user.exception.InvalidPasswordException;
 import com.monew.domain.user.exception.UserNotFoundException;
 import com.monew.domain.user.mapper.UserMapper;
 import com.monew.domain.user.repository.UserRepository;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -78,6 +79,11 @@ public class UserService {
         User user = getActiveUser(userId);
         user.softDelete();
         eventPublisher.publishEvent(new UserSoftDeletedEvent(userId));
+    }
+
+    @Transactional
+    public int hardDeleteBefore(Instant threshold) {
+        return userRepository.hardDeleteByDeletedAtBefore(threshold);
     }
 
     private User getActiveUser(UUID userId) {
