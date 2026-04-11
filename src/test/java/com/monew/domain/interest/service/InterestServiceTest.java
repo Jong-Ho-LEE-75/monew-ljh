@@ -13,10 +13,16 @@ import com.monew.domain.interest.dto.InterestDto;
 import com.monew.domain.interest.dto.request.InterestRegisterRequest;
 import com.monew.domain.interest.dto.request.InterestUpdateRequest;
 import com.monew.domain.interest.entity.Interest;
+import com.monew.domain.interest.entity.Subscription;
 import com.monew.domain.interest.exception.DuplicateInterestNameException;
 import com.monew.domain.interest.exception.InterestNotFoundException;
+import com.monew.domain.interest.exception.SubscriptionNotFoundException;
+import com.monew.domain.user.entity.User;
+import com.monew.domain.user.exception.UserNotFoundException;
 import com.monew.domain.interest.mapper.InterestMapper;
 import com.monew.domain.interest.repository.InterestRepository;
+import com.monew.domain.interest.repository.SubscriptionRepository;
+import com.monew.domain.user.repository.UserRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +41,12 @@ class InterestServiceTest {
 
     @Mock
     private InterestRepository interestRepository;
+
+    @Mock
+    private SubscriptionRepository subscriptionRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @Mock
     private InterestMapper interestMapper;
@@ -130,7 +142,7 @@ class InterestServiceTest {
             given(interestMapper.toDto(b, false))
                 .willReturn(new InterestDto(UUID.randomUUID(), "B", List.of(), 0, false, Instant.now()));
 
-            PageResponse<InterestDto> result = interestService.findAll(new CursorRequest(null, 2));
+            PageResponse<InterestDto> result = interestService.findAll(new CursorRequest(null, 2), null);
 
             assertThat(result.content()).hasSize(2);
             assertThat(result.hasNext()).isTrue();
@@ -146,7 +158,7 @@ class InterestServiceTest {
             given(interestMapper.toDto(a, false))
                 .willReturn(new InterestDto(UUID.randomUUID(), "A", List.of(), 0, false, Instant.now()));
 
-            PageResponse<InterestDto> result = interestService.findAll(new CursorRequest(null, 10));
+            PageResponse<InterestDto> result = interestService.findAll(new CursorRequest(null, 10), null);
 
             assertThat(result.hasNext()).isFalse();
             assertThat(result.nextCursor()).isNull();
@@ -206,6 +218,95 @@ class InterestServiceTest {
 
             assertThatThrownBy(() -> interestService.delete(id))
                 .isInstanceOf(InterestNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("subscribe")
+    class Subscribe {
+
+        @Test
+        void 정상_구독_시_카운트_증가() {
+            UUID userId = UUID.randomUUID();
+            UUID interestId = UUID.randomUUID();
+            User user = User.builder().email("a@a.com").nickname("n").password("p12345").build();
+            Interest interest = newInterest("Spring", List.of());
+
+            given(subscriptionRepository.existsByUser_IdAndInterest_Id(userId, interestId)).willReturn(false);
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(interestRepository.findByIdWithKeywords(interestId)).willReturn(Optional.of(interest));
+            given(interestMapper.toDto(interest, true))
+                .willReturn(new InterestDto(interestId, "Spring", List.of(), 1, true, Instant.now()));
+
+            InterestDto result = interestService.subscribe(userId, interestId);
+
+            assertThat(interest.getSubscriberCount()).isEqualTo(1);
+            assertThat(result.subscribedByMe()).isTrue();
+            verify(subscriptionRepository).save(any(Subscription.class));
+        }
+
+        @Test
+        void 이미_구독_중이면_신규_저장_없이_반환() {
+            UUID userId = UUID.randomUUID();
+            UUID interestId = UUID.randomUUID();
+            Interest interest = newInterest("Spring", List.of());
+
+            given(subscriptionRepository.existsByUser_IdAndInterest_Id(userId, interestId)).willReturn(true);
+            given(interestRepository.findByIdWithKeywords(interestId)).willReturn(Optional.of(interest));
+            given(interestMapper.toDto(interest, true))
+                .willReturn(new InterestDto(interestId, "Spring", List.of(), 0, true, Instant.now()));
+
+            interestService.subscribe(userId, interestId);
+
+            verify(subscriptionRepository, never()).save(any());
+            assertThat(interest.getSubscriberCount()).isEqualTo(0);
+        }
+
+        @Test
+        void 존재하지_않는_사용자_구독_예외() {
+            UUID userId = UUID.randomUUID();
+            UUID interestId = UUID.randomUUID();
+
+            given(subscriptionRepository.existsByUser_IdAndInterest_Id(userId, interestId)).willReturn(false);
+            given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> interestService.subscribe(userId, interestId))
+                .isInstanceOf(UserNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("unsubscribe")
+    class Unsubscribe {
+
+        @Test
+        void 정상_구독_해제_시_카운트_감소() {
+            UUID userId = UUID.randomUUID();
+            UUID interestId = UUID.randomUUID();
+            User user = User.builder().email("a@a.com").nickname("n").password("p12345").build();
+            Interest interest = newInterest("Spring", List.of());
+            interest.increaseSubscriber();
+            Subscription subscription = Subscription.of(user, interest);
+
+            given(subscriptionRepository.findByUser_IdAndInterest_Id(userId, interestId))
+                .willReturn(Optional.of(subscription));
+
+            interestService.unsubscribe(userId, interestId);
+
+            assertThat(interest.getSubscriberCount()).isEqualTo(0);
+            verify(subscriptionRepository).delete(subscription);
+        }
+
+        @Test
+        void 구독_없을_시_예외() {
+            UUID userId = UUID.randomUUID();
+            UUID interestId = UUID.randomUUID();
+
+            given(subscriptionRepository.findByUser_IdAndInterest_Id(userId, interestId))
+                .willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> interestService.unsubscribe(userId, interestId))
+                .isInstanceOf(SubscriptionNotFoundException.class);
         }
     }
 }

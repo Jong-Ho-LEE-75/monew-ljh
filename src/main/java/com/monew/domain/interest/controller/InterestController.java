@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,6 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/interests")
 public class InterestController {
+
+    private static final String USER_HEADER = "MoNew-Request-User-ID";
 
     private final InterestService interestService;
 
@@ -36,9 +39,10 @@ public class InterestController {
     @GetMapping
     public ResponseEntity<PageResponse<InterestDto>> findAll(
         @RequestParam(required = false) String cursor,
-        @RequestParam(required = false) Integer size
+        @RequestParam(required = false) Integer size,
+        @RequestHeader(value = USER_HEADER, required = false) UUID userId
     ) {
-        return ResponseEntity.ok(interestService.findAll(new CursorRequest(cursor, size)));
+        return ResponseEntity.ok(interestService.findAll(new CursorRequest(cursor, size), userId));
     }
 
     @PatchMapping("/{interestId}")
@@ -52,6 +56,24 @@ public class InterestController {
     @DeleteMapping("/{interestId}")
     public ResponseEntity<Void> delete(@PathVariable UUID interestId) {
         interestService.delete(interestId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{interestId}/subscriptions")
+    public ResponseEntity<InterestDto> subscribe(
+        @PathVariable UUID interestId,
+        @RequestHeader(USER_HEADER) UUID userId
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(interestService.subscribe(userId, interestId));
+    }
+
+    @DeleteMapping("/{interestId}/subscriptions")
+    public ResponseEntity<Void> unsubscribe(
+        @PathVariable UUID interestId,
+        @RequestHeader(USER_HEADER) UUID userId
+    ) {
+        interestService.unsubscribe(userId, interestId);
         return ResponseEntity.noContent().build();
     }
 }
