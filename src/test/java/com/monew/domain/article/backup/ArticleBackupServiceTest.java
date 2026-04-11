@@ -9,10 +9,12 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.monew.common.metrics.MonewMetrics;
 import com.monew.domain.article.entity.Article;
 import com.monew.domain.article.repository.ArticleRepository;
 import com.monew.domain.interest.entity.Interest;
 import com.monew.domain.interest.repository.InterestRepository;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.lang.reflect.Field;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -44,6 +46,9 @@ class ArticleBackupServiceTest {
 
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+
+    @Spy
+    private MonewMetrics metrics = new MonewMetrics(new SimpleMeterRegistry());
 
     @InjectMocks
     private ArticleBackupService service;

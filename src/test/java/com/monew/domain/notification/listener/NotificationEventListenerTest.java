@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import com.monew.common.metrics.MonewMetrics;
 import com.monew.domain.article.event.ArticleCollectedEvent;
 import com.monew.domain.comment.event.CommentLikedEvent;
 import com.monew.domain.interest.entity.Interest;
@@ -15,6 +16,7 @@ import com.monew.domain.interest.repository.SubscriptionRepository;
 import com.monew.domain.notification.entity.Notification.ResourceType;
 import com.monew.domain.notification.service.NotificationService;
 import com.monew.domain.user.entity.User;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.UUID;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,6 +35,9 @@ class NotificationEventListenerTest {
 
     @Mock
     private NotificationService notificationService;
+
+    @Spy
+    private MonewMetrics metrics = new MonewMetrics(new SimpleMeterRegistry());
 
     @InjectMocks
     private NotificationEventListener listener;

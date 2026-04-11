@@ -7,10 +7,12 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import com.monew.common.metrics.MonewMetrics;
 import com.monew.domain.article.entity.Article;
 import com.monew.domain.article.repository.ArticleRepository;
 import com.monew.domain.interest.entity.Interest;
 import com.monew.domain.interest.repository.InterestRepository;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -34,8 +36,10 @@ class ArticleCollectorTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    private final MonewMetrics metrics = new MonewMetrics(new SimpleMeterRegistry());
+
     private ArticleCollector collector(NewsSourceClient... clients) {
-        return new ArticleCollector(List.of(clients), interestRepository, articleRepository, eventPublisher);
+        return new ArticleCollector(List.of(clients), interestRepository, articleRepository, eventPublisher, metrics);
     }
 
     private CollectedArticle candidate(String title, String url) {
