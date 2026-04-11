@@ -1,8 +1,19 @@
 package com.monew.domain.article.controller;
 
+import com.monew.common.dto.CursorRequest;
+import com.monew.common.dto.PageResponse;
+import com.monew.domain.article.dto.ArticleDto;
 import com.monew.domain.article.service.ArticleService;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -10,7 +21,33 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/articles")
 public class ArticleController {
 
+    private static final String USER_HEADER = "MoNew-Request-User-ID";
+
     private final ArticleService articleService;
 
-    // TODO: GET 목록 / GET 상세(조회수 증가) / DELETE(논리 삭제)
+    @GetMapping
+    public ResponseEntity<PageResponse<ArticleDto>> findAll(
+        @RequestParam(required = false) UUID interestId,
+        @RequestParam(required = false) String cursor,
+        @RequestParam(required = false) Integer size,
+        @RequestHeader(value = USER_HEADER, required = false) UUID userId
+    ) {
+        return ResponseEntity.ok(
+            articleService.findAll(interestId, new CursorRequest(cursor, size), userId)
+        );
+    }
+
+    @PostMapping("/{articleId}/views")
+    public ResponseEntity<ArticleDto> view(
+        @PathVariable UUID articleId,
+        @RequestHeader(USER_HEADER) UUID userId
+    ) {
+        return ResponseEntity.ok(articleService.view(articleId, userId));
+    }
+
+    @DeleteMapping("/{articleId}")
+    public ResponseEntity<Void> softDelete(@PathVariable UUID articleId) {
+        articleService.softDelete(articleId);
+        return ResponseEntity.noContent().build();
+    }
 }
