@@ -55,5 +55,6 @@ monew:
     type: ${MONEW_BACKUP_TYPE:memory}
     scheduler-enabled: ${MONEW_BACKUP_SCHEDULER_ENABLED:false}
     cron: ${MONEW_BACKUP_CRON:0 5 0 * * *}
+    admin-token: ${MONEW_BACKUP_ADMIN_TOKEN:}
     s3:
       bucket: ${MONEW_BACKUP_S3_BUCKET:}
