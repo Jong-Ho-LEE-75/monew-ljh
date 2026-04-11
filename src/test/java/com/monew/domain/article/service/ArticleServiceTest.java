@@ -111,8 +111,9 @@ class ArticleServiceTest {
             User user = User.builder().email("a@a.com").nickname("n").password("p12345").build();
 
             given(articleRepository.findById(articleId)).willReturn(Optional.of(article));
+            given(articleViewRepository.existsByArticle_IdAndUser_Id(articleId, userId)).willReturn(false);
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
-            given(articleViewRepository.save(any(ArticleView.class)))
+            given(articleViewRepository.saveAndFlush(any(ArticleView.class)))
                 .willAnswer(inv -> inv.getArgument(0));
             given(articleMapper.toDto(article, true)).willReturn(dto(article, true));
 
@@ -126,12 +127,28 @@ class ArticleServiceTest {
             UUID articleId = UUID.randomUUID();
             UUID userId = UUID.randomUUID();
             Article article = newArticle("a");
+
+            given(articleRepository.findById(articleId)).willReturn(Optional.of(article));
+            given(articleViewRepository.existsByArticle_IdAndUser_Id(articleId, userId)).willReturn(true);
+            given(articleMapper.toDto(article, true)).willReturn(dto(article, true));
+
+            articleService.view(articleId, userId);
+
+            assertThat(article.getViewCount()).isEqualTo(0);
+        }
+
+        @Test
+        void 경쟁_상태_fallback_예외_삼킴() {
+            UUID articleId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+            Article article = newArticle("a");
             User user = User.builder().email("a@a.com").nickname("n").password("p12345").build();
 
             given(articleRepository.findById(articleId)).willReturn(Optional.of(article));
+            given(articleViewRepository.existsByArticle_IdAndUser_Id(articleId, userId)).willReturn(false);
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
             willThrow(new DataIntegrityViolationException("unique"))
-                .given(articleViewRepository).save(any(ArticleView.class));
+                .given(articleViewRepository).saveAndFlush(any(ArticleView.class));
             given(articleMapper.toDto(article, true)).willReturn(dto(article, true));
 
             articleService.view(articleId, userId);
