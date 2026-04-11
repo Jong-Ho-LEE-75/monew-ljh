@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -37,6 +38,22 @@ public class GlobalExceptionHandler {
             ErrorCode.VALIDATION_FAILED.name(),
             ErrorCode.VALIDATION_FAILED.getMessage(),
             fieldErrors,
+            e.getClass().getSimpleName(),
+            HttpStatus.BAD_REQUEST.value()
+        );
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(response);
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ErrorResponse> handleMissingRequestHeader(MissingRequestHeaderException e) {
+        log.warn("Missing request header: {}", e.getHeaderName());
+        ErrorResponse response = new ErrorResponse(
+            Instant.now(),
+            "MISSING_REQUEST_HEADER",
+            "필수 요청 헤더가 누락되었습니다: " + e.getHeaderName(),
+            Map.of("headerName", e.getHeaderName()),
             e.getClass().getSimpleName(),
             HttpStatus.BAD_REQUEST.value()
         );
