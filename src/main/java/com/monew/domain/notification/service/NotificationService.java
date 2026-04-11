@@ -56,6 +56,11 @@ public class NotificationService {
     }
 
     @Transactional
+    public int deleteConfirmedBefore(Instant threshold) {
+        return notificationRepository.deleteConfirmedBefore(threshold);
+    }
+
+    @Transactional
     public NotificationDto createForUser(
         UUID userId,
         String content,
