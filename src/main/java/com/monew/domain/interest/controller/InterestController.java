@@ -1,8 +1,24 @@
 package com.monew.domain.interest.controller;
 
+import com.monew.common.dto.CursorRequest;
+import com.monew.common.dto.PageResponse;
+import com.monew.domain.interest.dto.InterestDto;
+import com.monew.domain.interest.dto.request.InterestRegisterRequest;
+import com.monew.domain.interest.dto.request.InterestUpdateRequest;
 import com.monew.domain.interest.service.InterestService;
+import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -12,5 +28,30 @@ public class InterestController {
 
     private final InterestService interestService;
 
-    // TODO: 관심사 CRUD + 구독 엔드포인트 구현
+    @PostMapping
+    public ResponseEntity<InterestDto> register(@Valid @RequestBody InterestRegisterRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(interestService.register(request));
+    }
+
+    @GetMapping
+    public ResponseEntity<PageResponse<InterestDto>> findAll(
+        @RequestParam(required = false) String cursor,
+        @RequestParam(required = false) Integer size
+    ) {
+        return ResponseEntity.ok(interestService.findAll(new CursorRequest(cursor, size)));
+    }
+
+    @PatchMapping("/{interestId}")
+    public ResponseEntity<InterestDto> updateKeywords(
+        @PathVariable UUID interestId,
+        @Valid @RequestBody InterestUpdateRequest request
+    ) {
+        return ResponseEntity.ok(interestService.updateKeywords(interestId, request));
+    }
+
+    @DeleteMapping("/{interestId}")
+    public ResponseEntity<Void> delete(@PathVariable UUID interestId) {
+        interestService.delete(interestId);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -9,6 +9,7 @@ import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -27,5 +28,34 @@ public class Interest extends BaseUpdatableEntity {
     @OneToMany(mappedBy = "interest", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<InterestKeyword> keywords = new ArrayList<>();
 
-    // TODO: 이름 유사도 80% 검증은 서비스 계층에서 수행 (원본 브리프에 측정 방식 미명시 — 구현자 설계 포인트)
+    @Builder
+    private Interest(String name, List<String> keywords) {
+        this.name = name;
+        this.subscriberCount = 0;
+        if (keywords != null) {
+            keywords.forEach(this::addKeyword);
+        }
+    }
+
+    public void addKeyword(String keyword) {
+        InterestKeyword k = InterestKeyword.of(this, keyword);
+        this.keywords.add(k);
+    }
+
+    public void replaceKeywords(List<String> newKeywords) {
+        this.keywords.clear();
+        if (newKeywords != null) {
+            newKeywords.forEach(this::addKeyword);
+        }
+    }
+
+    public void increaseSubscriber() {
+        this.subscriberCount++;
+    }
+
+    public void decreaseSubscriber() {
+        if (this.subscriberCount > 0) {
+            this.subscriberCount--;
+        }
+    }
 }
