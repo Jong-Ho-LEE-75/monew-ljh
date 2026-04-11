@@ -5,6 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -26,5 +27,23 @@ public class User extends BaseUpdatableEntity {
     @Column(nullable = false)
     private boolean deleted = false;
 
-    // TODO: 생성자·도메인 메서드(updateNickname, softDelete 등)를 학습하며 직접 구현
+    @Builder
+    private User(String email, String nickname, String password) {
+        this.email = email;
+        this.nickname = nickname;
+        this.password = password;
+        this.deleted = false;
+    }
+
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public void softDelete() {
+        this.deleted = true;
+    }
+
+    public boolean matchPassword(String rawPassword) {
+        return this.password.equals(rawPassword);
+    }
 }
