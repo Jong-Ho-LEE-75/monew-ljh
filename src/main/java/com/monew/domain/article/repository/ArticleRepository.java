@@ -25,4 +25,14 @@ public interface ArticleRepository extends JpaRepository<Article, UUID> {
         @Param("cursor") Instant cursor,
         Pageable pageable
     );
+
+    @Query("""
+        select a from Article a
+        where a.createdAt >= :from and a.createdAt < :to
+        order by a.createdAt asc
+        """)
+    List<Article> findAllCreatedBetween(
+        @Param("from") Instant from,
+        @Param("to") Instant to
+    );
 }
