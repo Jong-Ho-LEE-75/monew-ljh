@@ -5,6 +5,8 @@ import com.monew.domain.user.dto.request.UserLoginRequest;
 import com.monew.domain.user.dto.request.UserRegisterRequest;
 import com.monew.domain.user.dto.request.UserUpdateRequest;
 import com.monew.domain.user.entity.User;
+import com.monew.domain.user.event.UserRegisteredEvent;
+import com.monew.domain.user.event.UserSoftDeletedEvent;
 import com.monew.domain.user.exception.DuplicateUserException;
 import com.monew.domain.user.exception.InvalidPasswordException;
 import com.monew.domain.user.exception.UserNotFoundException;
@@ -12,6 +14,7 @@ import com.monew.domain.user.mapper.UserMapper;
 import com.monew.domain.user.repository.UserRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +25,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public UserDto register(UserRegisterRequest request) {
@@ -36,6 +40,12 @@ public class UserService {
             .build();
 
         User saved = userRepository.save(user);
+        eventPublisher.publishEvent(new UserRegisteredEvent(
+            saved.getId(),
+            saved.getEmail(),
+            saved.getNickname(),
+            saved.getCreatedAt()
+        ));
         return userMapper.toDto(saved);
     }
 
@@ -65,6 +75,7 @@ public class UserService {
     public void softDelete(UUID userId) {
         User user = getActiveUser(userId);
         user.softDelete();
+        eventPublisher.publishEvent(new UserSoftDeletedEvent(userId));
     }
 
     private User getActiveUser(UUID userId) {

@@ -51,6 +51,9 @@ class InterestServiceTest {
     @Mock
     private InterestMapper interestMapper;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private InterestService interestService;
 
