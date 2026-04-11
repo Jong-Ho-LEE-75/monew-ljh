@@ -44,6 +44,13 @@ monew:
     rss:
       - source: HANKYUNG
         url: https://www.hankyung.com/feed/all-news
+      - source: JTBC
+        url: https://news-ex.jtbc.co.kr/v1/get/rss/newsflesh
+      - source: YONHAP
+        url: https://www.yna.co.kr/rss/news.xml
+      - source: 정책뉴스
+        url: https://www.korea.kr/rss/policy.xml
+
   backup:
     type: ${MONEW_BACKUP_TYPE:memory}
     scheduler-enabled: ${MONEW_BACKUP_SCHEDULER_ENABLED:false}
