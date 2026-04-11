@@ -28,4 +28,13 @@ public class Subscription extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "interest_id", nullable = false)
     private Interest interest;
+
+    private Subscription(User user, Interest interest) {
+        this.user = user;
+        this.interest = interest;
+    }
+
+    public static Subscription of(User user, Interest interest) {
+        return new Subscription(user, interest);
+    }
 }
