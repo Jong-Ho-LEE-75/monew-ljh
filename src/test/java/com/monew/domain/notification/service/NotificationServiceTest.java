@@ -69,7 +69,7 @@ class NotificationServiceTest {
             .resourceId(UUID.randomUUID()).build();
         setId(n1, UUID.randomUUID());
 
-        given(notificationRepository.findUnconfirmedPage(any(UUID.class), any(), any(Pageable.class)))
+        given(notificationRepository.findFirstUnconfirmedPage(any(UUID.class), any(Pageable.class)))
             .willReturn(List.of(n1));
 
         PageResponse<NotificationDto> page = service.findUnconfirmed(

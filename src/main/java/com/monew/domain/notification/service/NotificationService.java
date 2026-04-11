@@ -33,7 +33,9 @@ public class NotificationService {
         int size = cursorRequest.sizeOrDefault();
         Instant cursor = parseCursor(cursorRequest.cursor());
         Pageable pageable = PageRequest.of(0, size + 1);
-        List<Notification> page = notificationRepository.findUnconfirmedPage(userId, cursor, pageable);
+        List<Notification> page = cursor == null
+            ? notificationRepository.findFirstUnconfirmedPage(userId, pageable)
+            : notificationRepository.findUnconfirmedPageAfter(userId, cursor, pageable);
         List<NotificationDto> dtos = page.stream().map(notificationMapper::toDto).toList();
         return PageResponse.of(dtos, size, dto -> dto.createdAt().toString());
     }

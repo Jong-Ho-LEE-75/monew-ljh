@@ -95,7 +95,9 @@ public class CommentService {
         int size = cursorRequest.sizeOrDefault();
         Instant cursor = parseCursor(cursorRequest.cursor());
         Pageable pageable = PageRequest.of(0, size + 1);
-        List<Comment> comments = commentRepository.findPageByArticle(articleId, cursor, pageable);
+        List<Comment> comments = cursor == null
+            ? commentRepository.findFirstPageByArticle(articleId, pageable)
+            : commentRepository.findPageByArticleAfter(articleId, cursor, pageable);
 
         Set<UUID> likedIds = currentUserId == null
             ? Set.of()
