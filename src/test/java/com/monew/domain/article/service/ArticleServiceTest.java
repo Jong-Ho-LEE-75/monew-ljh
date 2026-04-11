@@ -106,6 +106,68 @@ class ArticleServiceTest {
             assertThat(result.content()).hasSize(2);
             assertThat(result.hasNext()).isFalse();
         }
+
+        @Test
+        void viewCount_정렬_커서() {
+            Article a = newArticle("a");
+            Page<Article> page = new PageImpl<>(List.of(a));
+
+            given(articleRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .willReturn(page);
+            given(articleMapper.toDto(a, false)).willReturn(dto(a, false));
+
+            ArticleSearchCondition condition = new ArticleSearchCondition(
+                null, null, null, null, null,
+                com.monew.domain.article.dto.ArticleSortBy.VIEW_COUNT,
+                com.monew.domain.article.dto.SortDirection.ASC
+            );
+            PageResponse<ArticleDto> result = articleService.findAll(
+                condition, new CursorRequest("10", 5), null);
+
+            assertThat(result.content()).hasSize(1);
+        }
+
+        @Test
+        void commentCount_정렬_잘못된_커서_무시() {
+            Article a = newArticle("a");
+            Page<Article> page = new PageImpl<>(List.of(a));
+
+            given(articleRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .willReturn(page);
+            given(articleMapper.toDto(a, false)).willReturn(dto(a, false));
+
+            ArticleSearchCondition condition = new ArticleSearchCondition(
+                null, null, null, null, null,
+                com.monew.domain.article.dto.ArticleSortBy.COMMENT_COUNT,
+                com.monew.domain.article.dto.SortDirection.DESC
+            );
+            // not-a-number cursor → parseCursor 예외 → null 처리 후 정상
+            PageResponse<ArticleDto> result = articleService.findAll(
+                condition, new CursorRequest("oops", 5), null);
+
+            assertThat(result.content()).hasSize(1);
+        }
+
+        @Test
+        void publishedAt_커서_파싱() {
+            Article a = newArticle("a");
+            Page<Article> page = new PageImpl<>(List.of(a));
+
+            given(articleRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .willReturn(page);
+            given(articleMapper.toDto(a, true)).willReturn(dto(a, true));
+            given(articleViewRepository.existsByArticle_IdAndUser_Id(any(), any())).willReturn(true);
+
+            ArticleSearchCondition condition = new ArticleSearchCondition(
+                null, null, null, null, null,
+                com.monew.domain.article.dto.ArticleSortBy.PUBLISHED_AT,
+                com.monew.domain.article.dto.SortDirection.DESC
+            );
+            PageResponse<ArticleDto> result = articleService.findAll(
+                condition, new CursorRequest("2026-04-10T00:00:00Z", 5), UUID.randomUUID());
+
+            assertThat(result.content()).hasSize(1);
+        }
     }
 
     @Nested

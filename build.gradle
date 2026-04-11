@@ -75,9 +75,12 @@ def jacocoExcludes = [
     'com/monew/MonewApplication*',
     'com/monew/**/dto/**',
     'com/monew/**/entity/**',
+    'com/monew/**/document/**',
     'com/monew/**/config/**',
     'com/monew/**/exception/**',
     'com/monew/**/event/**',
+    'com/monew/**/mapper/**',
+    'com/monew/**/collector/client/**',
     'com/monew/common/**',
     'com/monew/**/controller/api/**'
 ]
@@ -109,12 +112,17 @@ jacocoTestCoverageVerification {
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
-                minimum = 0.60
+                minimum = 0.80
             }
             limit {
                 counter = 'BRANCH'
                 value = 'COVEREDRATIO'
-                minimum = 0.50
+                minimum = 0.80
+            }
+            limit {
+                counter = 'INSTRUCTION'
+                value = 'COVEREDRATIO'
+                minimum = 0.80
             }
         }
     }

@@ -136,7 +136,7 @@ src/main/java/com/monew/
 - [x] T1 Bean Validation + DTO 계층 검증
 - [x] T2 전역 예외 체계 (MonewException + ErrorCode + GlobalExceptionHandler) ✨ MissingRequestHeaderException 핸들러 추가
 - [x] T3 MDC 로깅 (requestId, requestMethod, requestUrl 응답 헤더 포함)
-- [ ] T4 JaCoCo 커버리지 80% — 현재 LINE 60% / BRANCH 50%
+- [x] T4 JaCoCo 커버리지 80% 🆕 LINE 91% / BRANCH 81% / INSTRUCTION 90% (임계값 80%로 상향)
 - [x] T5 CI 파이프라인 (GitHub Actions 빌드/테스트/커버리지) 🆕 ECS 배포 워크플로우 스켈레톤 추가 (`.github/workflows/deploy.yml`)
 - [x] T6 Swagger / OpenAPI 문서
 - [x] T7 Micrometer 기반 메트릭 ✨ Prometheus 레지스트리 추가 (`/actuator/prometheus`)

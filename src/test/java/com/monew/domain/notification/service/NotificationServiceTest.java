@@ -106,6 +106,46 @@ class NotificationServiceTest {
     }
 
     @Test
+    void findUnconfirmed_커서_있음_분기() {
+        given(notificationRepository.findUnconfirmedPageAfter(any(UUID.class), any(Instant.class), any(Pageable.class)))
+            .willReturn(List.of());
+
+        PageResponse<NotificationDto> page = service.findUnconfirmed(
+            user.getId(), new CursorRequest("2026-04-10T00:00:00Z", 20));
+
+        assertThat(page.content()).isEmpty();
+    }
+
+    @Test
+    void findUnconfirmed_잘못된_커서_무시() {
+        given(notificationRepository.findFirstUnconfirmedPage(any(UUID.class), any(Pageable.class)))
+            .willReturn(List.of());
+
+        PageResponse<NotificationDto> page = service.findUnconfirmed(
+            user.getId(), new CursorRequest("not-instant", 20));
+
+        assertThat(page.content()).isEmpty();
+    }
+
+    @Test
+    void confirmAll_레포지토리_위임() {
+        given(notificationRepository.confirmAllByUserId(user.getId())).willReturn(7);
+
+        int updated = service.confirmAll(user.getId());
+
+        assertThat(updated).isEqualTo(7);
+    }
+
+    @Test
+    void confirm_없는_알림_예외() {
+        UUID id = UUID.randomUUID();
+        given(notificationRepository.findById(id)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.confirm(user.getId(), id))
+            .isInstanceOf(NotificationNotFoundException.class);
+    }
+
+    @Test
     void confirm_타인_알림_예외() throws Exception {
         Notification n = Notification.builder()
             .user(user).content("x").resourceType(ResourceType.INTEREST)
