@@ -1,11 +1,16 @@
 package com.monew.domain.article.collector.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import com.monew.domain.article.collector.CollectedArticle;
 import com.monew.domain.article.collector.config.NewsCollectionProperties;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestClient;
 
 class HankyungRssClientTest {
 
@@ -78,5 +83,81 @@ class HankyungRssClientTest {
             """;
 
         assertThat(client.parseRss(xml)).isEmpty();
+    }
+
+    @Test
+    void fetch_HTTP_응답_파싱() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+
+        String xml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <rss version="2.0">
+              <channel>
+                <item>
+                  <title>헤드라인</title>
+                  <link>https://www.hankyung.com/article/99</link>
+                  <description>desc</description>
+                  <pubDate>Wed, 10 Apr 2026 09:00:00 +0900</pubDate>
+                </item>
+              </channel>
+            </rss>
+            """;
+
+        server.expect(requestTo("https://feed.custom/hk"))
+            .andRespond(withSuccess(xml, MediaType.APPLICATION_XML));
+
+        NewsCollectionProperties properties = new NewsCollectionProperties(
+            null,
+            List.of(new NewsCollectionProperties.RssFeed("HANKYUNG", "https://feed.custom/hk"))
+        );
+        HankyungRssClient httpClient = new HankyungRssClient(builder.build(), properties);
+
+        List<CollectedArticle> result = httpClient.fetch("query");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).sourceUrl()).isEqualTo("https://www.hankyung.com/article/99");
+        server.verify();
+    }
+
+    @Test
+    void fetch_빈_본문_빈_리스트() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+
+        server.expect(requestTo("https://www.hankyung.com/feed/all-news"))
+            .andRespond(withSuccess("", MediaType.APPLICATION_XML));
+
+        HankyungRssClient httpClient = new HankyungRssClient(
+            builder.build(),
+            new NewsCollectionProperties(null, List.of())
+        );
+
+        assertThat(httpClient.fetch("q")).isEmpty();
+    }
+
+    @Test
+    void fetch_설정된_RSS_없으면_기본_피드_사용() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+
+        server.expect(requestTo("https://www.hankyung.com/feed/all-news"))
+            .andRespond(withSuccess("<rss><channel/></rss>", MediaType.APPLICATION_XML));
+
+        HankyungRssClient httpClient = new HankyungRssClient(
+            builder.build(),
+            new NewsCollectionProperties(
+                null,
+                List.of(new NewsCollectionProperties.RssFeed("OTHER", "https://x"))
+            )
+        );
+
+        assertThat(httpClient.fetch("q")).isEmpty();
+        server.verify();
+    }
+
+    @Test
+    void sourceName_상수() {
+        assertThat(client.sourceName()).isEqualTo("HANKYUNG");
     }
 }

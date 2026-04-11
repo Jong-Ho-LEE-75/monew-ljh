@@ -80,7 +80,6 @@ def jacocoExcludes = [
     'com/monew/**/exception/**',
     'com/monew/**/event/**',
     'com/monew/**/mapper/**',
-    'com/monew/**/collector/client/**',
     'com/monew/common/**',
     'com/monew/**/controller/api/**'
 ]
