@@ -11,6 +11,7 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -37,4 +38,35 @@ public class Comment extends BaseUpdatableEntity {
 
     @Column(nullable = false)
     private boolean deleted = false;
+
+    @Builder
+    private Comment(Article article, User user, String content) {
+        this.article = article;
+        this.user = user;
+        this.content = content;
+        this.likeCount = 0;
+        this.deleted = false;
+    }
+
+    public void updateContent(String newContent) {
+        this.content = newContent;
+    }
+
+    public void softDelete() {
+        this.deleted = true;
+    }
+
+    public void increaseLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decreaseLikeCount() {
+        if (this.likeCount > 0) {
+            this.likeCount--;
+        }
+    }
+
+    public boolean isOwnedBy(User target) {
+        return this.user.getId().equals(target.getId());
+    }
 }
