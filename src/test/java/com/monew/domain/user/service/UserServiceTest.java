@@ -27,6 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -39,6 +40,9 @@ class UserServiceTest {
 
     @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UserService userService;
@@ -62,17 +66,37 @@ class UserServiceTest {
         @Test
         void 정상_등록() {
             UserRegisterRequest request = new UserRegisterRequest("a@a.com", "nick", "pass12");
-            User saved = newUser("a@a.com", "nick", "pass12");
+            User saved = newUser("a@a.com", "nick", "{bcrypt}hashed");
             UserDto dto = toDto(saved);
 
             given(userRepository.existsByEmail("a@a.com")).willReturn(false);
+            given(passwordEncoder.encode("pass12")).willReturn("{bcrypt}hashed");
             given(userRepository.save(any(User.class))).willReturn(saved);
             given(userMapper.toDto(saved)).willReturn(dto);
 
             UserDto result = userService.register(request);
 
             assertThat(result.email()).isEqualTo("a@a.com");
+            verify(passwordEncoder).encode("pass12");
             verify(userRepository).save(any(User.class));
+        }
+
+        @Test
+        void 등록시_비밀번호는_해싱되어_저장() {
+            UserRegisterRequest request = new UserRegisterRequest("a@a.com", "nick", "pass12");
+            org.mockito.ArgumentCaptor<User> captor = org.mockito.ArgumentCaptor.forClass(User.class);
+
+            given(userRepository.existsByEmail("a@a.com")).willReturn(false);
+            given(passwordEncoder.encode("pass12")).willReturn("{bcrypt}hashed");
+            given(userRepository.save(any(User.class))).willAnswer(inv -> inv.getArgument(0));
+            given(userMapper.toDto(any(User.class))).willReturn(
+                new UserDto(UUID.randomUUID(), "a@a.com", "nick", Instant.now()));
+
+            userService.register(request);
+
+            verify(userRepository).save(captor.capture());
+            assertThat(captor.getValue().getPassword()).isEqualTo("{bcrypt}hashed");
+            assertThat(captor.getValue().getPassword()).isNotEqualTo("pass12");
         }
 
         @Test
@@ -94,9 +118,10 @@ class UserServiceTest {
         @Test
         void 정상_로그인() {
             UserLoginRequest request = new UserLoginRequest("a@a.com", "pass12");
-            User user = newUser("a@a.com", "nick", "pass12");
+            User user = newUser("a@a.com", "nick", "{bcrypt}hashed");
 
             given(userRepository.findByEmail("a@a.com")).willReturn(Optional.of(user));
+            given(passwordEncoder.matches("pass12", "{bcrypt}hashed")).willReturn(true);
             given(userMapper.toDto(user)).willReturn(toDto(user));
 
             UserDto result = userService.login(request);
@@ -107,9 +132,10 @@ class UserServiceTest {
         @Test
         void 비밀번호_불일치_시_예외() {
             UserLoginRequest request = new UserLoginRequest("a@a.com", "wrong!");
-            User user = newUser("a@a.com", "nick", "pass12");
+            User user = newUser("a@a.com", "nick", "{bcrypt}hashed");
 
             given(userRepository.findByEmail("a@a.com")).willReturn(Optional.of(user));
+            given(passwordEncoder.matches("wrong!", "{bcrypt}hashed")).willReturn(false);
 
             assertThatThrownBy(() -> userService.login(request))
                 .isInstanceOf(InvalidPasswordException.class);

@@ -42,8 +42,4 @@ public class User extends BaseUpdatableEntity {
     public void softDelete() {
         this.deleted = true;
     }
-
-    public boolean matchPassword(String rawPassword) {
-        return this.password.equals(rawPassword);
-    }
 }
