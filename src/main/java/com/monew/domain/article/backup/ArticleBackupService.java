@@ -3,6 +3,7 @@ package com.monew.domain.article.backup;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.monew.common.metrics.MonewMetrics;
 import com.monew.domain.article.entity.Article;
 import com.monew.domain.article.repository.ArticleRepository;
 import com.monew.domain.interest.entity.Interest;
@@ -26,6 +27,7 @@ public class ArticleBackupService {
     private final InterestRepository interestRepository;
     private final ArticleBackupStorage storage;
     private final ObjectMapper objectMapper;
+    private final MonewMetrics metrics;
 
     @Transactional(readOnly = true)
     public int backup(LocalDate date) {
@@ -40,10 +42,17 @@ public class ArticleBackupService {
         try {
             json = objectMapper.writeValueAsString(records);
         } catch (JsonProcessingException e) {
+            metrics.incrementBackupFailure();
             throw new IllegalStateException("백업 직렬화 실패 date=" + date, e);
         }
 
-        storage.upload(date, json);
+        try {
+            storage.upload(date, json);
+        } catch (RuntimeException e) {
+            metrics.incrementBackupFailure();
+            throw e;
+        }
+        metrics.incrementBackupUploaded();
         log.info("백업 업로드 완료 date={} count={}", date, records.size());
         return records.size();
     }
@@ -61,6 +70,7 @@ public class ArticleBackupService {
             records = objectMapper.readValue(payload.get(), new TypeReference<>() {
             });
         } catch (JsonProcessingException e) {
+            metrics.incrementBackupFailure();
             throw new IllegalStateException("백업 역직렬화 실패 date=" + date, e);
         }
 
@@ -84,6 +94,7 @@ public class ArticleBackupService {
 
         log.info("백업 복구 완료 date={} restored={} skipped={}",
             date, restored, records.size() - restored);
+        metrics.incrementBackupRestored(restored);
         return restored;
     }
 

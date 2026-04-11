@@ -1,5 +1,6 @@
 package com.monew.domain.article.collector;
 
+import com.monew.common.metrics.MonewMetrics;
 import com.monew.domain.article.entity.Article;
 import com.monew.domain.article.event.ArticleCollectedEvent;
 import com.monew.domain.article.repository.ArticleRepository;
@@ -7,6 +8,7 @@ import com.monew.domain.interest.entity.Interest;
 import com.monew.domain.interest.entity.InterestKeyword;
 import com.monew.domain.interest.repository.InterestRepository;
 import java.util.List;
+import java.util.concurrent.Callable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -23,9 +25,18 @@ public class ArticleCollector {
     private final InterestRepository interestRepository;
     private final ArticleRepository articleRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final MonewMetrics metrics;
 
     @Transactional
     public CollectionResult collect() {
+        try {
+            return metrics.collectionTimer().recordCallable((Callable<CollectionResult>) this::doCollect);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private CollectionResult doCollect() {
         List<Interest> interests = interestRepository.findAll();
         int attempted = 0;
         int saved = 0;
@@ -45,6 +56,7 @@ public class ArticleCollector {
                     fetched = client.fetch(interest.getName());
                 } catch (Exception e) {
                     log.warn("수집 실패 source={} interest={}", client.sourceName(), interest.getName(), e);
+                    metrics.incrementCollectionFailure();
                     continue;
                 }
 
@@ -74,6 +86,8 @@ public class ArticleCollector {
         }
 
         log.info("수집 완료 attempted={} saved={} duplicated={}", attempted, saved, duplicated);
+        metrics.incrementArticlesSaved(saved);
+        metrics.incrementArticlesDuplicated(duplicated);
         return new CollectionResult(attempted, saved, duplicated);
     }
 
