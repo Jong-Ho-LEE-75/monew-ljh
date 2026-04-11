@@ -6,6 +6,7 @@ import com.monew.domain.article.entity.Article;
 import com.monew.domain.article.exception.ArticleNotFoundException;
 import com.monew.domain.article.repository.ArticleRepository;
 import com.monew.domain.comment.dto.CommentDto;
+import com.monew.domain.comment.dto.CommentSortBy;
 import com.monew.domain.comment.dto.request.CommentCreateRequest;
 import com.monew.domain.comment.dto.request.CommentUpdateRequest;
 import com.monew.domain.comment.entity.Comment;
@@ -91,13 +92,28 @@ public class CommentService {
         comment.softDelete();
     }
 
-    public PageResponse<CommentDto> findByArticle(UUID articleId, UUID currentUserId, CursorRequest cursorRequest) {
+    public PageResponse<CommentDto> findByArticle(
+        UUID articleId,
+        UUID currentUserId,
+        CommentSortBy sortBy,
+        CursorRequest cursorRequest
+    ) {
         int size = cursorRequest.sizeOrDefault();
-        Instant cursor = parseCursor(cursorRequest.cursor());
         Pageable pageable = PageRequest.of(0, size + 1);
-        List<Comment> comments = cursor == null
-            ? commentRepository.findFirstPageByArticle(articleId, pageable)
-            : commentRepository.findPageByArticleAfter(articleId, cursor, pageable);
+        CommentSortBy effectiveSort = sortBy == null ? CommentSortBy.CREATED_AT : sortBy;
+
+        List<Comment> comments;
+        if (effectiveSort == CommentSortBy.LIKE_COUNT) {
+            Long cursor = parseLongCursor(cursorRequest.cursor());
+            comments = cursor == null
+                ? commentRepository.findFirstPageByArticleOrderByLikes(articleId, pageable)
+                : commentRepository.findPageByArticleAfterLikes(articleId, cursor, pageable);
+        } else {
+            Instant cursor = parseCursor(cursorRequest.cursor());
+            comments = cursor == null
+                ? commentRepository.findFirstPageByArticle(articleId, pageable)
+                : commentRepository.findPageByArticleAfter(articleId, cursor, pageable);
+        }
 
         Set<UUID> likedIds = currentUserId == null
             ? Set.of()
@@ -110,7 +126,11 @@ public class CommentService {
             .map(c -> commentMapper.toDto(c, likedIds.contains(c.getId())))
             .toList();
 
-        return PageResponse.of(dtos, size, dto -> dto.createdAt().toString());
+        return PageResponse.of(dtos, size, dto ->
+            effectiveSort == CommentSortBy.LIKE_COUNT
+                ? Long.toString(dto.likeCount())
+                : dto.createdAt().toString()
+        );
     }
 
     @Transactional
@@ -166,6 +186,17 @@ public class CommentService {
         try {
             return Instant.parse(cursor);
         } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static Long parseLongCursor(String cursor) {
+        if (cursor == null || cursor.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(cursor);
+        } catch (NumberFormatException e) {
             return null;
         }
     }

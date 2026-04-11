@@ -10,7 +10,10 @@ import static org.mockito.Mockito.verify;
 
 import com.monew.domain.article.entity.Article;
 import com.monew.domain.article.repository.ArticleRepository;
+import com.monew.common.dto.CursorRequest;
+import com.monew.common.dto.PageResponse;
 import com.monew.domain.comment.dto.CommentDto;
+import com.monew.domain.comment.dto.CommentSortBy;
 import com.monew.domain.comment.dto.request.CommentCreateRequest;
 import com.monew.domain.comment.dto.request.CommentUpdateRequest;
 import com.monew.domain.comment.entity.Comment;
@@ -24,6 +27,7 @@ import com.monew.domain.comment.repository.CommentRepository;
 import com.monew.domain.user.entity.User;
 import com.monew.domain.user.repository.UserRepository;
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -252,6 +256,58 @@ class CommentServiceTest {
             assertThat(dto.likedByMe()).isFalse();
             assertThat(comment.getLikeCount()).isEqualTo(0);
             verify(commentLikeRepository).delete(like);
+        }
+    }
+
+    @Nested
+    class FindByArticle {
+
+        @Test
+        void 좋아요순_정렬_시_likeCount_커서_사용() throws Exception {
+            Comment c1 = Comment.builder().article(article).user(author).content("a").build();
+            setId(c1, UUID.randomUUID());
+            c1.increaseLikeCount();
+            c1.increaseLikeCount();
+            c1.increaseLikeCount();
+
+            given(commentRepository.findFirstPageByArticleOrderByLikes(
+                eq(article.getId()), any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(List.of(c1));
+
+            PageResponse<CommentDto> page = commentService.findByArticle(
+                article.getId(), null, CommentSortBy.LIKE_COUNT, new CursorRequest(null, 10));
+
+            assertThat(page.content()).hasSize(1);
+            assertThat(page.content().get(0).likeCount()).isEqualTo(3);
+            assertThat(page.hasNext()).isFalse();
+        }
+
+        @Test
+        void 좋아요순_커서_파라미터_전달() {
+            given(commentRepository.findPageByArticleAfterLikes(
+                eq(article.getId()), eq(5L),
+                any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(List.of());
+
+            commentService.findByArticle(
+                article.getId(), null, CommentSortBy.LIKE_COUNT, new CursorRequest("5", 10));
+
+            verify(commentRepository).findPageByArticleAfterLikes(
+                eq(article.getId()), eq(5L),
+                any(org.springframework.data.domain.Pageable.class));
+        }
+
+        @Test
+        void 정렬_미지정_시_createdAt_기존_쿼리_사용() {
+            given(commentRepository.findFirstPageByArticle(
+                eq(article.getId()), any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(List.of());
+
+            commentService.findByArticle(
+                article.getId(), null, null, new CursorRequest(null, 10));
+
+            verify(commentRepository).findFirstPageByArticle(
+                eq(article.getId()), any(org.springframework.data.domain.Pageable.class));
         }
     }
 }
