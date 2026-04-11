@@ -44,6 +44,9 @@ public class Article extends BaseUpdatableEntity {
     private long viewCount = 0;
 
     @Column(nullable = false)
+    private long commentCount = 0;
+
+    @Column(nullable = false)
     private boolean deleted = false;
 
     @Builder
@@ -62,11 +65,22 @@ public class Article extends BaseUpdatableEntity {
         this.publishedAt = publishedAt;
         this.interest = interest;
         this.viewCount = 0;
+        this.commentCount = 0;
         this.deleted = false;
     }
 
     public void incrementViewCount() {
         this.viewCount++;
+    }
+
+    public void incrementCommentCount() {
+        this.commentCount++;
+    }
+
+    public void decrementCommentCount() {
+        if (this.commentCount > 0) {
+            this.commentCount--;
+        }
     }
 
     public void softDelete() {

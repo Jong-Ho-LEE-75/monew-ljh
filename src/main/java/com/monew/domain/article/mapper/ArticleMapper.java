@@ -20,6 +20,7 @@ public class ArticleMapper {
             interest != null ? interest.getId() : null,
             interest != null ? interest.getName() : null,
             article.getViewCount(),
+            article.getCommentCount(),
             viewedByMe
         );
     }

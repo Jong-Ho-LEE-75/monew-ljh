@@ -58,6 +58,7 @@ public class CommentService {
             .content(request.content())
             .build();
         Comment saved = commentRepository.save(comment);
+        article.incrementCommentCount();
         eventPublisher.publishEvent(new CommentCreatedEvent(
             saved.getId(),
             article.getId(),
@@ -90,6 +91,7 @@ public class CommentService {
             throw new CommentNotOwnedException(commentId, currentUserId);
         }
         comment.softDelete();
+        comment.getArticle().decrementCommentCount();
     }
 
     public PageResponse<CommentDto> findByArticle(

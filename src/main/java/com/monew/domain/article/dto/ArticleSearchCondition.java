@@ -10,10 +10,15 @@ public record ArticleSearchCondition(
     Instant publishedFrom,
     Instant publishedTo,
     UUID interestId,
+    ArticleSortBy sortBy,
     SortDirection direction
 ) {
 
     public SortDirection directionOrDefault() {
         return direction == null ? SortDirection.DESC : direction;
+    }
+
+    public ArticleSortBy sortByOrDefault() {
+        return sortBy == null ? ArticleSortBy.PUBLISHED_AT : sortBy;
     }
 }

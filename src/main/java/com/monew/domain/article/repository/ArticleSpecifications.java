@@ -1,8 +1,10 @@
 package com.monew.domain.article.repository;
 
 import com.monew.domain.article.dto.ArticleSearchCondition;
+import com.monew.domain.article.dto.ArticleSortBy;
 import com.monew.domain.article.dto.SortDirection;
 import com.monew.domain.article.entity.Article;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -14,7 +16,7 @@ public final class ArticleSpecifications {
     private ArticleSpecifications() {
     }
 
-    public static Specification<Article> build(ArticleSearchCondition condition, Instant cursor) {
+    public static Specification<Article> build(ArticleSearchCondition condition, Object cursor) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.isFalse(root.get("deleted")));
@@ -44,10 +46,30 @@ public final class ArticleSpecifications {
             }
 
             if (cursor != null) {
-                if (condition.directionOrDefault() == SortDirection.DESC) {
-                    predicates.add(cb.lessThan(root.get("publishedAt"), cursor));
-                } else {
-                    predicates.add(cb.greaterThan(root.get("publishedAt"), cursor));
+                ArticleSortBy sortBy = condition.sortByOrDefault();
+                boolean desc = condition.directionOrDefault() == SortDirection.DESC;
+                switch (sortBy) {
+                    case VIEW_COUNT -> {
+                        Path<Long> path = root.get("viewCount");
+                        long value = ((Number) cursor).longValue();
+                        predicates.add(desc
+                            ? cb.lessThan(path, value)
+                            : cb.greaterThan(path, value));
+                    }
+                    case COMMENT_COUNT -> {
+                        Path<Long> path = root.get("commentCount");
+                        long value = ((Number) cursor).longValue();
+                        predicates.add(desc
+                            ? cb.lessThan(path, value)
+                            : cb.greaterThan(path, value));
+                    }
+                    default -> {
+                        Path<Instant> path = root.get("publishedAt");
+                        Instant value = (Instant) cursor;
+                        predicates.add(desc
+                            ? cb.lessThan(path, value)
+                            : cb.greaterThan(path, value));
+                    }
                 }
             }
 
