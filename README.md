@@ -84,6 +84,67 @@ src/main/java/com/monew/
 
 각 도메인 패키지는 `entity/` (또는 `document/`), `repository/`, `service/`, `controller/`, `exception/` 하위 구조를 공유한다.
 
+## 요구사항 구현 현황 (2026-04-11)
+
+✨ 표시는 2026-04-11 P0 버그 수정 및 A2 구현에서 반영한 항목이다.
+
+### 기능 요구사항
+
+#### 사용자
+- [x] U1 사용자 등록 (이메일 중복 검증 포함) — *비밀번호 해싱(BCrypt) 미구현*
+- [x] U2 로그인
+- [x] U3 사용자 정보 조회
+- [x] U4 닉네임 수정
+- [x] U5 사용자 논리 삭제 — *1일 후 완전 삭제 배치 미구현*
+
+#### 관심사
+- [x] I1 관심사 등록 (Levenshtein 80% 유사도 검증)
+- [x] I2 관심사 목록 조회 — *검색어/구독자수 정렬 미구현*
+- [x] I3 관심사 키워드 수정
+- [x] I4 관심사 삭제
+- [x] I5 관심사 구독
+- [x] I6 관심사 구독 취소
+
+#### 뉴스 기사
+- [x] A1 뉴스 수집 배치 (Naver API + RSS 4종, 매 시간) ✨ RSS 소스 확장 (JTBC/연합/정책)
+- [x] A2 기사 목록 필터/검색/정렬 ✨ keyword/sourceIn/publishedFrom/publishedTo/direction 지원 — *댓글수/조회수 정렬 미구현*
+- [x] A3 기사 조회수 unique 집계 ✨ 중복 조회 경쟁 상태 fallback 수정
+- [x] A4 기사 논리 삭제
+- [x] A5 S3(혹은 InMemory) 스냅샷 백업
+- [ ] A6 기사 복구 — REST 엔드포인트 미구현 (서비스 로직만 존재)
+
+#### 댓글
+- [x] C1 댓글 등록
+- [x] C2 댓글 목록 조회 (커서 페이지네이션) ✨ JPQL null 파라미터 버그 수정 — *좋아요순 정렬 미구현*
+- [x] C3 본인 댓글 수정
+- [x] C4 본인 댓글 삭제
+- [x] C5 댓글 좋아요
+- [x] C6 댓글 좋아요 취소
+
+#### 활동 내역
+- [x] AC1 사용자 활동 내역 (MongoDB 역정규화 읽기모델, 이벤트 기반 선제 갱신)
+
+#### 알림
+- [x] N1 미확인 알림 목록 조회 ✨ JPQL null 파라미터 버그 수정
+- [x] N2 알림 확인
+- [x] N3 알림 일괄 확인
+- [ ] N4 확인 후 1주일 경과 자동 삭제 배치
+
+### 기술 요구사항
+
+- [x] T1 Bean Validation + DTO 계층 검증
+- [x] T2 전역 예외 체계 (MonewException + ErrorCode + GlobalExceptionHandler) ✨ MissingRequestHeaderException 핸들러 추가
+- [x] T3 MDC 로깅 (requestId, requestMethod, requestUrl 응답 헤더 포함)
+- [ ] T4 JaCoCo 커버리지 80% — 현재 LINE 60% / BRANCH 50%
+- [x] T5 CI 파이프라인 (GitHub Actions 빌드/테스트/커버리지) — *ECS 배포 파이프라인 미구현*
+- [x] T6 Swagger / OpenAPI 문서
+- [x] T7 Micrometer 기반 메트릭 ✨ Prometheus 레지스트리 추가 (`/actuator/prometheus`)
+- [x] T8 AWS S3 자격증명 관리 (환경변수)
+- [x] T9 폴리글랏 영속성 (PostgreSQL + MongoDB)
+- [x] T10 BaseEntity / BaseUpdatableEntity + JPA Auditing
+
+---
+
 ## 참고
 
 - 요구사항 원문: Codeit 모뉴 프로젝트 브리프 (Notion)
