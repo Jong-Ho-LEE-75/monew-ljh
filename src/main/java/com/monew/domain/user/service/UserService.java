@@ -15,6 +15,7 @@ import com.monew.domain.user.repository.UserRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public UserDto register(UserRegisterRequest request) {
@@ -36,7 +38,7 @@ public class UserService {
         User user = User.builder()
             .email(request.email())
             .nickname(request.nickname())
-            .password(request.password())
+            .password(passwordEncoder.encode(request.password()))
             .build();
 
         User saved = userRepository.save(user);
@@ -53,7 +55,7 @@ public class UserService {
         User user = userRepository.findByEmail(request.email())
             .orElseThrow(() -> new UserNotFoundException(request.email()));
 
-        if (user.isDeleted() || !user.matchPassword(request.password())) {
+        if (user.isDeleted() || !passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new InvalidPasswordException(request.email());
         }
 
