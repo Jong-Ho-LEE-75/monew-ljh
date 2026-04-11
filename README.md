@@ -108,7 +108,7 @@ src/main/java/com/monew/
 
 #### 뉴스 기사
 - [x] A1 뉴스 수집 배치 (Naver API + RSS 4종, 매 시간) ✨ RSS 소스 확장 (JTBC/연합/정책)
-- [x] A2 기사 목록 필터/검색/정렬 ✨ keyword/sourceIn/publishedFrom/publishedTo/direction 지원 — *댓글수/조회수 정렬 미구현*
+- [x] A2 기사 목록 필터/검색/정렬 ✨ keyword/sourceIn/publishedFrom/publishedTo/direction 지원 🆕 sortBy(PUBLISHED_AT/VIEW_COUNT/COMMENT_COUNT) 추가
 - [x] A3 기사 조회수 unique 집계 ✨ 중복 조회 경쟁 상태 fallback 수정
 - [x] A4 기사 논리 삭제
 - [x] A5 S3(혹은 InMemory) 스냅샷 백업
@@ -137,7 +137,7 @@ src/main/java/com/monew/
 - [x] T2 전역 예외 체계 (MonewException + ErrorCode + GlobalExceptionHandler) ✨ MissingRequestHeaderException 핸들러 추가
 - [x] T3 MDC 로깅 (requestId, requestMethod, requestUrl 응답 헤더 포함)
 - [ ] T4 JaCoCo 커버리지 80% — 현재 LINE 60% / BRANCH 50%
-- [x] T5 CI 파이프라인 (GitHub Actions 빌드/테스트/커버리지) — *ECS 배포 파이프라인 미구현*
+- [x] T5 CI 파이프라인 (GitHub Actions 빌드/테스트/커버리지) 🆕 ECS 배포 워크플로우 스켈레톤 추가 (`.github/workflows/deploy.yml`)
 - [x] T6 Swagger / OpenAPI 문서
 - [x] T7 Micrometer 기반 메트릭 ✨ Prometheus 레지스트리 추가 (`/actuator/prometheus`)
 - [x] T8 AWS S3 자격증명 관리 (환경변수)
