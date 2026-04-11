@@ -55,11 +55,16 @@ public class ArticleService {
     @Transactional
     public ArticleDto view(UUID articleId, UUID userId) {
         Article article = findActiveArticle(articleId);
+
+        if (articleViewRepository.existsByArticle_IdAndUser_Id(articleId, userId)) {
+            return articleMapper.toDto(article, true);
+        }
+
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new UserNotFoundException(userId));
 
         try {
-            ArticleView view = articleViewRepository.save(ArticleView.of(article, user));
+            ArticleView view = articleViewRepository.saveAndFlush(ArticleView.of(article, user));
             article.incrementViewCount();
             eventPublisher.publishEvent(new ArticleViewedEvent(
                 view.getId(),
@@ -75,7 +80,7 @@ public class ArticleService {
                 view.getCreatedAt() == null ? Instant.now() : view.getCreatedAt()
             ));
         } catch (DataIntegrityViolationException ignored) {
-            // 이미 조회한 사용자: 유니크 제약 위반 → 멱등
+            // 경쟁 상태 fallback: 동시에 두 요청이 existsBy 통과 후 하나만 저장됨
         }
 
         return articleMapper.toDto(article, true);
