@@ -28,4 +28,13 @@ public class ArticleView extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    private ArticleView(Article article, User user) {
+        this.article = article;
+        this.user = user;
+    }
+
+    public static ArticleView of(Article article, User user) {
+        return new ArticleView(article, user);
+    }
 }

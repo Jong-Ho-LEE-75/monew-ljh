@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -44,4 +45,31 @@ public class Article extends BaseUpdatableEntity {
 
     @Column(nullable = false)
     private boolean deleted = false;
+
+    @Builder
+    private Article(
+        String source,
+        String sourceUrl,
+        String title,
+        String summary,
+        Instant publishedAt,
+        Interest interest
+    ) {
+        this.source = source;
+        this.sourceUrl = sourceUrl;
+        this.title = title;
+        this.summary = summary;
+        this.publishedAt = publishedAt;
+        this.interest = interest;
+        this.viewCount = 0;
+        this.deleted = false;
+    }
+
+    public void incrementViewCount() {
+        this.viewCount++;
+    }
+
+    public void softDelete() {
+        this.deleted = true;
+    }
 }
