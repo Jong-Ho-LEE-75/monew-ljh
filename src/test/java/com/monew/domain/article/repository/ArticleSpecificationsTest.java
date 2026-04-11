@@ -115,13 +115,13 @@ class ArticleSpecificationsTest {
     }
 
     @Test
-    void keyword_조건_조립() {
-        // 키워드 LIKE 조건이 lower(summary)에서 H2 CLOB과 충돌하므로 SQL 실행 대신
-        // Specification 조립 자체가 정상 동작하는지만 확인 (toPredicate 호출 가능 여부).
+    void keyword_제목_요약_부분일치() {
         Specification<Article> spec = ArticleSpecifications.build(
             new ArticleSearchCondition("자바", null, null, null, null, null, null), null);
 
-        assertThat(spec).isNotNull();
+        List<Article> result = articleRepository.findAll(spec);
+
+        assertThat(result).extracting(Article::getTitle).containsExactly("Java 17");
     }
 
     @Test
