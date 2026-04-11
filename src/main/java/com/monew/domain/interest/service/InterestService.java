@@ -2,7 +2,10 @@ package com.monew.domain.interest.service;
 
 import com.monew.common.dto.CursorRequest;
 import com.monew.common.dto.PageResponse;
+import com.monew.domain.article.dto.SortDirection;
 import com.monew.domain.interest.dto.InterestDto;
+import com.monew.domain.interest.dto.InterestSearchCondition;
+import com.monew.domain.interest.dto.InterestSortBy;
 import com.monew.domain.interest.dto.request.InterestRegisterRequest;
 import com.monew.domain.interest.dto.request.InterestUpdateRequest;
 import com.monew.domain.interest.entity.Interest;
@@ -53,16 +56,51 @@ public class InterestService {
         return interestMapper.toDto(saved, false);
     }
 
-    public PageResponse<InterestDto> findAll(CursorRequest cursorRequest, UUID currentUserId) {
+    public PageResponse<InterestDto> findAll(
+        InterestSearchCondition condition,
+        CursorRequest cursorRequest,
+        UUID currentUserId
+    ) {
         int size = cursorRequest.sizeOrDefault();
-        List<Interest> page = interestRepository.findPage(
-            cursorRequest.cursor(),
-            PageRequest.of(0, size + 1)
-        );
+        InterestSortBy sortBy = condition.sortByOrDefault();
+        SortDirection direction = condition.directionOrDefault();
+        String keyword = (condition.keyword() == null || condition.keyword().isBlank())
+            ? null : condition.keyword().trim();
+        String cursor = cursorRequest.cursor();
+
+        List<Interest> page;
+        if (sortBy == InterestSortBy.SUBSCRIBER_COUNT) {
+            Long numericCursor = parseLongCursor(cursor);
+            page = direction == SortDirection.ASC
+                ? interestRepository.findPageBySubscriberCountAsc(
+                    keyword, numericCursor, PageRequest.of(0, size + 1))
+                : interestRepository.findPageBySubscriberCountDesc(
+                    keyword, numericCursor, PageRequest.of(0, size + 1));
+        } else {
+            page = interestRepository.findPageByName(
+                keyword, cursor, PageRequest.of(0, size + 1));
+        }
+
         List<InterestDto> dtos = page.stream()
             .map(interest -> interestMapper.toDto(interest, isSubscribed(currentUserId, interest.getId())))
             .toList();
-        return PageResponse.of(dtos, size, InterestDto::name);
+
+        return PageResponse.of(dtos, size, dto ->
+            sortBy == InterestSortBy.SUBSCRIBER_COUNT
+                ? Long.toString(dto.subscriberCount())
+                : dto.name()
+        );
+    }
+
+    private static Long parseLongCursor(String cursor) {
+        if (cursor == null || cursor.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(cursor);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     @Transactional

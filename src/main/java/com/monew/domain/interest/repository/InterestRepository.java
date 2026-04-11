@@ -14,9 +14,52 @@ public interface InterestRepository extends JpaRepository<Interest, UUID> {
         select distinct i from Interest i
         left join fetch i.keywords
         where (:cursor is null or i.name > :cursor)
+          and (:keyword is null
+               or lower(i.name) like lower(concat('%', :keyword, '%'))
+               or exists (select 1 from InterestKeyword ik
+                          where ik.interest = i
+                            and lower(ik.keyword) like lower(concat('%', :keyword, '%'))))
         order by i.name asc
         """)
-    List<Interest> findPage(@Param("cursor") String cursor, Pageable pageable);
+    List<Interest> findPageByName(
+        @Param("keyword") String keyword,
+        @Param("cursor") String cursor,
+        Pageable pageable
+    );
+
+    @Query("""
+        select distinct i from Interest i
+        left join fetch i.keywords
+        where (:cursor is null or i.subscriberCount < :cursor)
+          and (:keyword is null
+               or lower(i.name) like lower(concat('%', :keyword, '%'))
+               or exists (select 1 from InterestKeyword ik
+                          where ik.interest = i
+                            and lower(ik.keyword) like lower(concat('%', :keyword, '%'))))
+        order by i.subscriberCount desc, i.name asc
+        """)
+    List<Interest> findPageBySubscriberCountDesc(
+        @Param("keyword") String keyword,
+        @Param("cursor") Long cursor,
+        Pageable pageable
+    );
+
+    @Query("""
+        select distinct i from Interest i
+        left join fetch i.keywords
+        where (:cursor is null or i.subscriberCount > :cursor)
+          and (:keyword is null
+               or lower(i.name) like lower(concat('%', :keyword, '%'))
+               or exists (select 1 from InterestKeyword ik
+                          where ik.interest = i
+                            and lower(ik.keyword) like lower(concat('%', :keyword, '%'))))
+        order by i.subscriberCount asc, i.name asc
+        """)
+    List<Interest> findPageBySubscriberCountAsc(
+        @Param("keyword") String keyword,
+        @Param("cursor") Long cursor,
+        Pageable pageable
+    );
 
     @Query("""
         select distinct i from Interest i
