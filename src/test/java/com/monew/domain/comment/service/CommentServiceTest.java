@@ -309,5 +309,67 @@ class CommentServiceTest {
             verify(commentRepository).findFirstPageByArticle(
                 eq(article.getId()), any(org.springframework.data.domain.Pageable.class));
         }
+
+        @Test
+        void createdAt_커서_파싱_정상() {
+            given(commentRepository.findPageByArticleAfter(
+                eq(article.getId()), any(java.time.Instant.class),
+                any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(List.of());
+
+            commentService.findByArticle(
+                article.getId(), null, CommentSortBy.CREATED_AT,
+                new CursorRequest("2026-04-10T00:00:00Z", 10));
+
+            verify(commentRepository).findPageByArticleAfter(
+                eq(article.getId()), any(java.time.Instant.class),
+                any(org.springframework.data.domain.Pageable.class));
+        }
+
+        @Test
+        void createdAt_커서_잘못된_포맷_무시() {
+            given(commentRepository.findFirstPageByArticle(
+                eq(article.getId()), any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(List.of());
+
+            commentService.findByArticle(
+                article.getId(), null, CommentSortBy.CREATED_AT,
+                new CursorRequest("not-instant", 10));
+
+            verify(commentRepository).findFirstPageByArticle(
+                eq(article.getId()), any(org.springframework.data.domain.Pageable.class));
+        }
+
+        @Test
+        void 좋아요순_잘못된_커서_무시() {
+            given(commentRepository.findFirstPageByArticleOrderByLikes(
+                eq(article.getId()), any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(List.of());
+
+            commentService.findByArticle(
+                article.getId(), null, CommentSortBy.LIKE_COUNT,
+                new CursorRequest("oops", 10));
+
+            verify(commentRepository).findFirstPageByArticleOrderByLikes(
+                eq(article.getId()), any(org.springframework.data.domain.Pageable.class));
+        }
+
+        @Test
+        void 사용자_id_있을_때_likedIds_조회() throws Exception {
+            Comment c1 = Comment.builder().article(article).user(author).content("a").build();
+            setId(c1, UUID.randomUUID());
+
+            given(commentRepository.findFirstPageByArticle(
+                eq(article.getId()), any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(List.of(c1));
+            given(commentLikeRepository.existsByComment_IdAndUser_Id(c1.getId(), otherUser.getId()))
+                .willReturn(true);
+
+            PageResponse<CommentDto> page = commentService.findByArticle(
+                article.getId(), otherUser.getId(), null, new CursorRequest(null, 10));
+
+            assertThat(page.content()).hasSize(1);
+            assertThat(page.content().get(0).likedByMe()).isTrue();
+        }
     }
 }
