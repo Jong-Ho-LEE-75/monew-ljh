@@ -3,12 +3,15 @@ package com.monew.domain.article.service;
 import com.monew.common.dto.CursorRequest;
 import com.monew.common.dto.PageResponse;
 import com.monew.domain.article.dto.ArticleDto;
+import com.monew.domain.article.dto.ArticleSearchCondition;
+import com.monew.domain.article.dto.SortDirection;
 import com.monew.domain.article.entity.Article;
 import com.monew.domain.article.entity.ArticleView;
 import com.monew.domain.article.event.ArticleViewedEvent;
 import com.monew.domain.article.exception.ArticleNotFoundException;
 import com.monew.domain.article.mapper.ArticleMapper;
 import com.monew.domain.article.repository.ArticleRepository;
+import com.monew.domain.article.repository.ArticleSpecifications;
 import com.monew.domain.article.repository.ArticleViewRepository;
 import com.monew.domain.user.entity.User;
 import com.monew.domain.user.exception.UserNotFoundException;
@@ -20,6 +23,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,17 +41,18 @@ public class ArticleService {
     private final ApplicationEventPublisher eventPublisher;
 
     public PageResponse<ArticleDto> findAll(
-        UUID interestId,
+        ArticleSearchCondition condition,
         CursorRequest cursorRequest,
         UUID currentUserId
     ) {
         int size = cursorRequest.sizeOrDefault();
         Instant cursor = parseCursor(cursorRequest.cursor());
-        List<Article> page = articleRepository.findPage(
-            interestId,
-            cursor,
-            PageRequest.of(0, size + 1)
-        );
+        Specification<Article> spec = ArticleSpecifications.build(condition, cursor);
+        Sort.Direction sortDirection = condition.directionOrDefault() == SortDirection.ASC
+            ? Sort.Direction.ASC
+            : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(0, size + 1, Sort.by(sortDirection, "publishedAt"));
+        List<Article> page = articleRepository.findAll(spec, pageable).getContent();
         List<ArticleDto> dtos = page.stream()
             .map(article -> articleMapper.toDto(article, isViewed(currentUserId, article.getId())))
             .toList();
