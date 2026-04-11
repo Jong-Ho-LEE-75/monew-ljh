@@ -16,6 +16,8 @@ import com.monew.domain.notification.repository.NotificationRepository;
 import com.monew.domain.user.entity.User;
 import com.monew.domain.user.repository.UserRepository;
 import java.lang.reflect.Field;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -91,6 +93,16 @@ class NotificationServiceTest {
         service.confirm(user.getId(), n.getId());
 
         assertThat(n.isConfirmed()).isTrue();
+    }
+
+    @Test
+    void deleteConfirmedBefore_레포지토리에_위임() {
+        Instant threshold = Instant.now().minus(7, ChronoUnit.DAYS);
+        given(notificationRepository.deleteConfirmedBefore(threshold)).willReturn(5);
+
+        int deleted = service.deleteConfirmedBefore(threshold);
+
+        assertThat(deleted).isEqualTo(5);
     }
 
     @Test

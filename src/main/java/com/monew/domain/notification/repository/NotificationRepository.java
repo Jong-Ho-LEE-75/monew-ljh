@@ -39,4 +39,8 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     @Modifying
     @Query("update Notification n set n.confirmed = true where n.user.id = :userId and n.confirmed = false")
     int confirmAllByUserId(@Param("userId") UUID userId);
+
+    @Modifying
+    @Query("delete from Notification n where n.confirmed = true and n.updatedAt < :threshold")
+    int deleteConfirmedBefore(@Param("threshold") Instant threshold);
 }
