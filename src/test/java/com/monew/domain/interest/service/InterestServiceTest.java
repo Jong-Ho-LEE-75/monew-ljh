@@ -3,13 +3,17 @@ package com.monew.domain.interest.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.monew.common.dto.CursorRequest;
 import com.monew.common.dto.PageResponse;
+import com.monew.domain.article.dto.SortDirection;
 import com.monew.domain.interest.dto.InterestDto;
+import com.monew.domain.interest.dto.InterestSearchCondition;
+import com.monew.domain.interest.dto.InterestSortBy;
 import com.monew.domain.interest.dto.request.InterestRegisterRequest;
 import com.monew.domain.interest.dto.request.InterestUpdateRequest;
 import com.monew.domain.interest.entity.Interest;
@@ -138,14 +142,18 @@ class InterestServiceTest {
             Interest b = newInterest("B", List.of());
             Interest c = newInterest("C", List.of());
 
-            given(interestRepository.findPage(any(), any(Pageable.class)))
+            given(interestRepository.findPageByName(any(), any(), any(Pageable.class)))
                 .willReturn(List.of(a, b, c));
             given(interestMapper.toDto(a, false))
                 .willReturn(new InterestDto(UUID.randomUUID(), "A", List.of(), 0, false, Instant.now()));
             given(interestMapper.toDto(b, false))
                 .willReturn(new InterestDto(UUID.randomUUID(), "B", List.of(), 0, false, Instant.now()));
 
-            PageResponse<InterestDto> result = interestService.findAll(new CursorRequest(null, 2), null);
+            PageResponse<InterestDto> result = interestService.findAll(
+                new InterestSearchCondition(null, null, null),
+                new CursorRequest(null, 2),
+                null
+            );
 
             assertThat(result.content()).hasSize(2);
             assertThat(result.hasNext()).isTrue();
@@ -156,15 +164,54 @@ class InterestServiceTest {
         void 마지막_페이지는_nextCursor_null() {
             Interest a = newInterest("A", List.of());
 
-            given(interestRepository.findPage(any(), any(Pageable.class)))
+            given(interestRepository.findPageByName(any(), any(), any(Pageable.class)))
                 .willReturn(List.of(a));
             given(interestMapper.toDto(a, false))
                 .willReturn(new InterestDto(UUID.randomUUID(), "A", List.of(), 0, false, Instant.now()));
 
-            PageResponse<InterestDto> result = interestService.findAll(new CursorRequest(null, 10), null);
+            PageResponse<InterestDto> result = interestService.findAll(
+                new InterestSearchCondition(null, null, null),
+                new CursorRequest(null, 10),
+                null
+            );
 
             assertThat(result.hasNext()).isFalse();
             assertThat(result.nextCursor()).isNull();
+        }
+
+        @Test
+        void 구독자수_내림차순_정렬_시_숫자_커서_반환() {
+            Interest a = newInterest("A", List.of());
+            Interest b = newInterest("B", List.of());
+            // a, b 의 subscriberCount 는 0
+            given(interestRepository.findPageBySubscriberCountDesc(any(), any(), any(Pageable.class)))
+                .willReturn(List.of(a, b));
+            given(interestMapper.toDto(a, false))
+                .willReturn(new InterestDto(UUID.randomUUID(), "A", List.of(), 5, false, Instant.now()));
+
+            PageResponse<InterestDto> result = interestService.findAll(
+                new InterestSearchCondition(null, InterestSortBy.SUBSCRIBER_COUNT, SortDirection.DESC),
+                new CursorRequest(null, 1),
+                null
+            );
+
+            assertThat(result.content()).hasSize(1);
+            assertThat(result.hasNext()).isTrue();
+            assertThat(result.nextCursor()).isEqualTo("5");
+        }
+
+        @Test
+        void 검색어와_정렬_조합_시_레포지토리_파라미터_전달() {
+            given(interestRepository.findPageBySubscriberCountAsc(any(), any(), any(Pageable.class)))
+                .willReturn(List.of());
+
+            interestService.findAll(
+                new InterestSearchCondition("Spring", InterestSortBy.SUBSCRIBER_COUNT, SortDirection.ASC),
+                new CursorRequest("3", 10),
+                null
+            );
+
+            verify(interestRepository).findPageBySubscriberCountAsc(eq("Spring"), eq(3L), any(Pageable.class));
         }
     }
 

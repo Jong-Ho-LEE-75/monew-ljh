@@ -2,7 +2,10 @@ package com.monew.domain.interest.controller;
 
 import com.monew.common.dto.CursorRequest;
 import com.monew.common.dto.PageResponse;
+import com.monew.domain.article.dto.SortDirection;
 import com.monew.domain.interest.dto.InterestDto;
+import com.monew.domain.interest.dto.InterestSearchCondition;
+import com.monew.domain.interest.dto.InterestSortBy;
 import com.monew.domain.interest.dto.request.InterestRegisterRequest;
 import com.monew.domain.interest.dto.request.InterestUpdateRequest;
 import com.monew.domain.interest.service.InterestService;
@@ -38,11 +41,17 @@ public class InterestController {
 
     @GetMapping
     public ResponseEntity<PageResponse<InterestDto>> findAll(
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) InterestSortBy sortBy,
+        @RequestParam(required = false) SortDirection direction,
         @RequestParam(required = false) String cursor,
         @RequestParam(required = false) Integer size,
         @RequestHeader(value = USER_HEADER, required = false) UUID userId
     ) {
-        return ResponseEntity.ok(interestService.findAll(new CursorRequest(cursor, size), userId));
+        InterestSearchCondition condition = new InterestSearchCondition(keyword, sortBy, direction);
+        return ResponseEntity.ok(
+            interestService.findAll(condition, new CursorRequest(cursor, size), userId)
+        );
     }
 
     @PatchMapping("/{interestId}")
