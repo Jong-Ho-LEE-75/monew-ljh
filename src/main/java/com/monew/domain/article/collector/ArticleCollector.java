@@ -1,6 +1,7 @@
 package com.monew.domain.article.collector;
 
 import com.monew.domain.article.entity.Article;
+import com.monew.domain.article.event.ArticleCollectedEvent;
 import com.monew.domain.article.repository.ArticleRepository;
 import com.monew.domain.interest.entity.Interest;
 import com.monew.domain.interest.entity.InterestKeyword;
@@ -8,6 +9,7 @@ import com.monew.domain.interest.repository.InterestRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,7 @@ public class ArticleCollector {
     private final List<NewsSourceClient> clients;
     private final InterestRepository interestRepository;
     private final ArticleRepository articleRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public CollectionResult collect() {
@@ -55,8 +58,14 @@ public class ArticleCollector {
                         continue;
                     }
                     try {
-                        articleRepository.save(toEntity(candidate, interest));
+                        Article savedArticle = articleRepository.save(toEntity(candidate, interest));
                         saved++;
+                        eventPublisher.publishEvent(new ArticleCollectedEvent(
+                            savedArticle.getId(),
+                            interest.getId(),
+                            interest.getName(),
+                            savedArticle.getTitle()
+                        ));
                     } catch (DataIntegrityViolationException e) {
                         duplicated++;
                     }

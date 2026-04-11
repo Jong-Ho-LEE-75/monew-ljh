@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 class ArticleCollectorTest {
@@ -30,8 +31,11 @@ class ArticleCollectorTest {
     @Mock
     private ArticleRepository articleRepository;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private ArticleCollector collector(NewsSourceClient... clients) {
-        return new ArticleCollector(List.of(clients), interestRepository, articleRepository);
+        return new ArticleCollector(List.of(clients), interestRepository, articleRepository, eventPublisher);
     }
 
     private CollectedArticle candidate(String title, String url) {
@@ -48,6 +52,7 @@ class ArticleCollectorTest {
             candidate("Python 소식", "url2")
         ));
         given(articleRepository.existsBySourceUrl(anyString())).willReturn(false);
+        given(articleRepository.save(any(Article.class))).willAnswer(inv -> inv.getArgument(0));
 
         ArticleCollector articleCollector = collector(client);
 
