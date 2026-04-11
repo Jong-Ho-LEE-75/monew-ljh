@@ -6,7 +6,10 @@ import com.monew.domain.interest.dto.InterestDto;
 import com.monew.domain.interest.dto.request.InterestRegisterRequest;
 import com.monew.domain.interest.dto.request.InterestUpdateRequest;
 import com.monew.domain.interest.entity.Interest;
+import com.monew.domain.interest.entity.InterestKeyword;
 import com.monew.domain.interest.entity.Subscription;
+import com.monew.domain.interest.event.SubscriptionAddedEvent;
+import com.monew.domain.interest.event.SubscriptionRemovedEvent;
 import com.monew.domain.interest.exception.DuplicateInterestNameException;
 import com.monew.domain.interest.exception.InterestNotFoundException;
 import com.monew.domain.interest.exception.SubscriptionNotFoundException;
@@ -17,9 +20,11 @@ import com.monew.domain.interest.util.SimilarityChecker;
 import com.monew.domain.user.entity.User;
 import com.monew.domain.user.exception.UserNotFoundException;
 import com.monew.domain.user.repository.UserRepository;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +38,7 @@ public class InterestService {
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
     private final InterestMapper interestMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public InterestDto register(InterestRegisterRequest request) {
@@ -86,6 +92,15 @@ public class InterestService {
         subscriptionRepository.save(Subscription.of(user, interest));
         interest.increaseSubscriber();
 
+        eventPublisher.publishEvent(new SubscriptionAddedEvent(
+            userId,
+            interestId,
+            interest.getName(),
+            interest.getKeywords().stream().map(InterestKeyword::getKeyword).toList(),
+            interest.getSubscriberCount(),
+            Instant.now()
+        ));
+
         return interestMapper.toDto(interest, true);
     }
 
@@ -98,6 +113,8 @@ public class InterestService {
         Interest interest = subscription.getInterest();
         subscriptionRepository.delete(subscription);
         interest.decreaseSubscriber();
+
+        eventPublisher.publishEvent(new SubscriptionRemovedEvent(userId, interestId));
     }
 
     private Interest findById(UUID interestId) {

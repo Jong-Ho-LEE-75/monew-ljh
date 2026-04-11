@@ -10,7 +10,9 @@ import com.monew.domain.comment.dto.request.CommentCreateRequest;
 import com.monew.domain.comment.dto.request.CommentUpdateRequest;
 import com.monew.domain.comment.entity.Comment;
 import com.monew.domain.comment.entity.CommentLike;
+import com.monew.domain.comment.event.CommentCreatedEvent;
 import com.monew.domain.comment.event.CommentLikedEvent;
+import com.monew.domain.comment.event.CommentUnlikedEvent;
 import com.monew.domain.comment.exception.CommentNotFoundException;
 import com.monew.domain.comment.exception.CommentNotOwnedException;
 import com.monew.domain.comment.mapper.CommentMapper;
@@ -55,6 +57,15 @@ public class CommentService {
             .content(request.content())
             .build();
         Comment saved = commentRepository.save(comment);
+        eventPublisher.publishEvent(new CommentCreatedEvent(
+            saved.getId(),
+            article.getId(),
+            article.getTitle(),
+            user.getId(),
+            user.getNickname(),
+            saved.getContent(),
+            saved.getCreatedAt() == null ? Instant.now() : saved.getCreatedAt()
+        ));
         return commentMapper.toDto(saved, false);
     }
 
@@ -127,6 +138,7 @@ public class CommentService {
             .ifPresent(like -> {
                 commentLikeRepository.delete(like);
                 comment.decreaseLikeCount();
+                eventPublisher.publishEvent(new CommentUnlikedEvent(commentId, currentUserId));
             });
         return commentMapper.toDto(comment, false);
     }

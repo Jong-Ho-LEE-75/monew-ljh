@@ -5,6 +5,7 @@ import com.monew.common.dto.PageResponse;
 import com.monew.domain.article.dto.ArticleDto;
 import com.monew.domain.article.entity.Article;
 import com.monew.domain.article.entity.ArticleView;
+import com.monew.domain.article.event.ArticleViewedEvent;
 import com.monew.domain.article.exception.ArticleNotFoundException;
 import com.monew.domain.article.mapper.ArticleMapper;
 import com.monew.domain.article.repository.ArticleRepository;
@@ -16,6 +17,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ public class ArticleService {
     private final ArticleViewRepository articleViewRepository;
     private final UserRepository userRepository;
     private final ArticleMapper articleMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     public PageResponse<ArticleDto> findAll(
         UUID interestId,
@@ -56,8 +59,21 @@ public class ArticleService {
             .orElseThrow(() -> new UserNotFoundException(userId));
 
         try {
-            articleViewRepository.save(ArticleView.of(article, user));
+            ArticleView view = articleViewRepository.save(ArticleView.of(article, user));
             article.incrementViewCount();
+            eventPublisher.publishEvent(new ArticleViewedEvent(
+                view.getId(),
+                article.getId(),
+                userId,
+                article.getSource(),
+                article.getSourceUrl(),
+                article.getTitle(),
+                article.getSummary(),
+                article.getPublishedAt(),
+                article.getViewCount(),
+                0L,
+                view.getCreatedAt() == null ? Instant.now() : view.getCreatedAt()
+            ));
         } catch (DataIntegrityViolationException ignored) {
             // 이미 조회한 사용자: 유니크 제약 위반 → 멱등
         }

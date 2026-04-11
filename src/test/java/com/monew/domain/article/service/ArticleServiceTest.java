@@ -46,6 +46,9 @@ class ArticleServiceTest {
     @Mock
     private ArticleMapper articleMapper;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private ArticleService articleService;
 
@@ -109,6 +112,8 @@ class ArticleServiceTest {
 
             given(articleRepository.findById(articleId)).willReturn(Optional.of(article));
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(articleViewRepository.save(any(ArticleView.class)))
+                .willAnswer(inv -> inv.getArgument(0));
             given(articleMapper.toDto(article, true)).willReturn(dto(article, true));
 
             articleService.view(articleId, userId);
