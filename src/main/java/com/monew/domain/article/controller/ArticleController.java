@@ -3,7 +3,11 @@ package com.monew.domain.article.controller;
 import com.monew.common.dto.CursorRequest;
 import com.monew.common.dto.PageResponse;
 import com.monew.domain.article.dto.ArticleDto;
+import com.monew.domain.article.dto.ArticleSearchCondition;
+import com.monew.domain.article.dto.SortDirection;
 import com.monew.domain.article.service.ArticleService;
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,12 +32,20 @@ public class ArticleController {
     @GetMapping
     public ResponseEntity<PageResponse<ArticleDto>> findAll(
         @RequestParam(required = false) UUID interestId,
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) List<String> sourceIn,
+        @RequestParam(required = false) Instant publishedFrom,
+        @RequestParam(required = false) Instant publishedTo,
+        @RequestParam(required = false) SortDirection direction,
         @RequestParam(required = false) String cursor,
         @RequestParam(required = false) Integer size,
         @RequestHeader(value = USER_HEADER, required = false) UUID userId
     ) {
+        ArticleSearchCondition condition = new ArticleSearchCondition(
+            keyword, sourceIn, publishedFrom, publishedTo, interestId, direction
+        );
         return ResponseEntity.ok(
-            articleService.findAll(interestId, new CursorRequest(cursor, size), userId)
+            articleService.findAll(condition, new CursorRequest(cursor, size), userId)
         );
     }
 

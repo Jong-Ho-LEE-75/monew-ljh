@@ -9,6 +9,7 @@ import static org.mockito.BDDMockito.willThrow;
 import com.monew.common.dto.CursorRequest;
 import com.monew.common.dto.PageResponse;
 import com.monew.domain.article.dto.ArticleDto;
+import com.monew.domain.article.dto.ArticleSearchCondition;
 import com.monew.domain.article.entity.Article;
 import com.monew.domain.article.entity.ArticleView;
 import com.monew.domain.article.exception.ArticleNotFoundException;
@@ -29,7 +30,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 @ExtendWith(MockitoExtension.class)
 class ArticleServiceTest {
@@ -85,14 +89,18 @@ class ArticleServiceTest {
         void 커서_응답_생성() {
             Article a = newArticle("a");
             Article b = newArticle("b");
+            Page<Article> page = new PageImpl<>(List.of(a, b));
 
-            given(articleRepository.findPage(any(), any(), any(Pageable.class)))
-                .willReturn(List.of(a, b));
+            given(articleRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .willReturn(page);
             given(articleMapper.toDto(a, false)).willReturn(dto(a, false));
             given(articleMapper.toDto(b, false)).willReturn(dto(b, false));
 
+            ArticleSearchCondition condition = new ArticleSearchCondition(
+                null, null, null, null, null, null
+            );
             PageResponse<ArticleDto> result = articleService.findAll(
-                null, new CursorRequest(null, 10), null);
+                condition, new CursorRequest(null, 10), null);
 
             assertThat(result.content()).hasSize(2);
             assertThat(result.hasNext()).isFalse();
