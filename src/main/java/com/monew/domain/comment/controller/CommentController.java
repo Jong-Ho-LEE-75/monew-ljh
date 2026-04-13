@@ -2,6 +2,7 @@ package com.monew.domain.comment.controller;
 
 import com.monew.common.dto.CursorRequest;
 import com.monew.common.dto.PageResponse;
+import com.monew.domain.article.dto.SortDirection;
 import com.monew.domain.comment.dto.CommentDto;
 import com.monew.domain.comment.dto.CommentSortBy;
 import com.monew.domain.comment.dto.request.CommentCreateRequest;
@@ -43,12 +44,13 @@ public class CommentController {
     public ResponseEntity<PageResponse<CommentDto>> findByArticle(
         @RequestParam UUID articleId,
         @RequestHeader(value = USER_HEADER, required = false) UUID userId,
-        @RequestParam(required = false) CommentSortBy sortBy,
+        @RequestParam(required = false, name = "orderBy") CommentSortBy sortBy,
+        @RequestParam(required = false) SortDirection direction,
         @RequestParam(required = false) String cursor,
-        @RequestParam(required = false) Integer size
+        @RequestParam(required = false, name = "limit") Integer size
     ) {
         return ResponseEntity.ok(
-            commentService.findByArticle(articleId, userId, sortBy, new CursorRequest(cursor, size)));
+            commentService.findByArticle(articleId, userId, sortBy, direction, new CursorRequest(cursor, size)));
     }
 
     @PatchMapping("/{commentId}")

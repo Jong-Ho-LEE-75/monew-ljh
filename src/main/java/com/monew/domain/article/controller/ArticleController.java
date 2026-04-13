@@ -35,12 +35,12 @@ public class ArticleController {
         @RequestParam(required = false) UUID interestId,
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) List<String> sourceIn,
-        @RequestParam(required = false) Instant publishedFrom,
-        @RequestParam(required = false) Instant publishedTo,
-        @RequestParam(required = false) ArticleSortBy sortBy,
+        @RequestParam(required = false, name = "publishDateFrom") Instant publishedFrom,
+        @RequestParam(required = false, name = "publishDateTo") Instant publishedTo,
+        @RequestParam(required = false, name = "orderBy") ArticleSortBy sortBy,
         @RequestParam(required = false) SortDirection direction,
         @RequestParam(required = false) String cursor,
-        @RequestParam(required = false) Integer size,
+        @RequestParam(required = false, name = "limit") Integer size,
         @RequestHeader(value = USER_HEADER, required = false) UUID userId
     ) {
         ArticleSearchCondition condition = new ArticleSearchCondition(

@@ -2,6 +2,7 @@ package com.monew.domain.comment.service;
 
 import com.monew.common.dto.CursorRequest;
 import com.monew.common.dto.PageResponse;
+import com.monew.domain.article.dto.SortDirection;
 import com.monew.domain.article.entity.Article;
 import com.monew.domain.article.exception.ArticleNotFoundException;
 import com.monew.domain.article.repository.ArticleRepository;
@@ -98,23 +99,37 @@ public class CommentService {
         UUID articleId,
         UUID currentUserId,
         CommentSortBy sortBy,
+        SortDirection direction,
         CursorRequest cursorRequest
     ) {
         int size = cursorRequest.sizeOrDefault();
         Pageable pageable = PageRequest.of(0, size + 1);
         CommentSortBy effectiveSort = sortBy == null ? CommentSortBy.CREATED_AT : sortBy;
+        boolean asc = direction == SortDirection.ASC;
 
         List<Comment> comments;
         if (effectiveSort == CommentSortBy.LIKE_COUNT) {
             Long cursor = parseLongCursor(cursorRequest.cursor());
-            comments = cursor == null
-                ? commentRepository.findFirstPageByArticleOrderByLikes(articleId, pageable)
-                : commentRepository.findPageByArticleAfterLikes(articleId, cursor, pageable);
+            if (asc) {
+                comments = cursor == null
+                    ? commentRepository.findFirstPageByArticleOrderByLikesAsc(articleId, pageable)
+                    : commentRepository.findPageByArticleAfterLikesAsc(articleId, cursor, pageable);
+            } else {
+                comments = cursor == null
+                    ? commentRepository.findFirstPageByArticleOrderByLikes(articleId, pageable)
+                    : commentRepository.findPageByArticleAfterLikes(articleId, cursor, pageable);
+            }
         } else {
             Instant cursor = parseCursor(cursorRequest.cursor());
-            comments = cursor == null
-                ? commentRepository.findFirstPageByArticle(articleId, pageable)
-                : commentRepository.findPageByArticleAfter(articleId, cursor, pageable);
+            if (asc) {
+                comments = cursor == null
+                    ? commentRepository.findFirstPageByArticleAsc(articleId, pageable)
+                    : commentRepository.findPageByArticleAfterAsc(articleId, cursor, pageable);
+            } else {
+                comments = cursor == null
+                    ? commentRepository.findFirstPageByArticle(articleId, pageable)
+                    : commentRepository.findPageByArticleAfter(articleId, cursor, pageable);
+            }
         }
 
         Set<UUID> likedIds = currentUserId == null
