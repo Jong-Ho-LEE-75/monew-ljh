@@ -69,6 +69,7 @@ public class UserActivityProjector {
                 .commentUserId(event.commentOwnerId())
                 .commentUserNickname(event.likerNickname())
                 .commentContent(event.commentContent())
+                .commentLikeCount(event.commentLikeCount())
                 .commentCreatedAt(event.commentCreatedAt())
                 .createdAt(java.time.Instant.now())
                 .build()

@@ -114,7 +114,7 @@ public class ArticleService {
                 article.getSummary(),
                 article.getPublishedAt(),
                 article.getViewCount(),
-                0L,
+                article.getCommentCount(),
                 view.getCreatedAt() == null ? Instant.now() : view.getCreatedAt()
             ));
         } catch (DataIntegrityViolationException ignored) {
