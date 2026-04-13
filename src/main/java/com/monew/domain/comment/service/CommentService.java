@@ -144,14 +144,16 @@ public class CommentService {
         }
         commentLikeRepository.save(CommentLike.of(comment, user));
         comment.increaseLikeCount();
-        if (!comment.isOwnedBy(user)) {
-            eventPublisher.publishEvent(new CommentLikedEvent(
-                comment.getId(),
-                comment.getUser().getId(),
-                user.getId(),
-                user.getNickname()
-            ));
-        }
+        eventPublisher.publishEvent(new CommentLikedEvent(
+            comment.getId(),
+            comment.getUser().getId(),
+            user.getId(),
+            user.getNickname(),
+            comment.getArticle().getId(),
+            comment.getArticle().getTitle(),
+            comment.getContent(),
+            comment.getCreatedAt()
+        ));
         return commentMapper.toDto(comment, true);
     }
 

@@ -66,7 +66,8 @@ class UserActivityProjectorTest {
     void 댓글_좋아요_이벤트_프로젝션() {
         UUID likerId = UUID.randomUUID();
         projector.onCommentLiked(new CommentLikedEvent(
-            UUID.randomUUID(), UUID.randomUUID(), likerId, "라이커"));
+            UUID.randomUUID(), UUID.randomUUID(), likerId, "라이커",
+            UUID.randomUUID(), "기사 제목", "댓글 내용", java.time.Instant.now()));
         verify(userActivityService).projectCommentLiked(eq(likerId), any(CommentLikeSnapshot.class));
     }
 
