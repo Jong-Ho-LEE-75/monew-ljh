@@ -13,6 +13,7 @@ import com.monew.domain.interest.event.SubscriptionAddedEvent;
 import com.monew.domain.interest.event.SubscriptionRemovedEvent;
 import com.monew.domain.user.event.UserRegisteredEvent;
 import com.monew.domain.user.event.UserSoftDeletedEvent;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -61,9 +62,14 @@ public class UserActivityProjector {
         safely("projectCommentLiked", () -> userActivityService.projectCommentLiked(
             event.likerId(),
             CommentLikeSnapshot.builder()
+                .id(UUID.randomUUID())
                 .commentId(event.commentId())
+                .articleId(event.articleId())
+                .articleTitle(event.articleTitle())
                 .commentUserId(event.commentOwnerId())
                 .commentUserNickname(event.likerNickname())
+                .commentContent(event.commentContent())
+                .commentCreatedAt(event.commentCreatedAt())
                 .createdAt(java.time.Instant.now())
                 .build()
         ));

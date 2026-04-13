@@ -48,7 +48,8 @@ class NotificationEventListenerTest {
         UUID ownerId = UUID.randomUUID();
         UUID likerId = UUID.randomUUID();
 
-        listener.onCommentLiked(new CommentLikedEvent(commentId, ownerId, likerId, "라이커"));
+        listener.onCommentLiked(new CommentLikedEvent(commentId, ownerId, likerId, "라이커",
+            UUID.randomUUID(), "기사 제목", "댓글 내용", java.time.Instant.now()));
 
         verify(notificationService).createForUser(
             eq(ownerId),

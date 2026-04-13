@@ -208,7 +208,7 @@ class CommentServiceTest {
         }
 
         @Test
-        void 본인_댓글_좋아요는_이벤트_미발행() throws Exception {
+        void 본인_댓글_좋아요도_이벤트_발행() throws Exception {
             Comment comment = Comment.builder().article(article).user(author).content("x").build();
             setId(comment, UUID.randomUUID());
 
@@ -219,7 +219,7 @@ class CommentServiceTest {
 
             commentService.like(author.getId(), comment.getId());
 
-            verify(eventPublisher, never()).publishEvent(any());
+            verify(eventPublisher).publishEvent(any(CommentLikedEvent.class));
         }
 
         @Test
