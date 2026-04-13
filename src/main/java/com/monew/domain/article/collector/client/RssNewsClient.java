@@ -2,7 +2,6 @@ package com.monew.domain.article.collector.client;
 
 import com.monew.domain.article.collector.CollectedArticle;
 import com.monew.domain.article.collector.NewsSourceClient;
-import com.monew.domain.article.collector.config.NewsCollectionProperties;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -12,9 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -22,25 +19,27 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 @Slf4j
-@Component
-@RequiredArgsConstructor
-public class HankyungRssClient implements NewsSourceClient {
+public class RssNewsClient implements NewsSourceClient {
 
-    private static final String SOURCE_NAME = "HANKYUNG";
-    private static final String DEFAULT_FEED = "https://www.hankyung.com/feed/all-news";
     private static final DateTimeFormatter PUB_DATE_FORMAT = DateTimeFormatter.RFC_1123_DATE_TIME;
 
+    private final String sourceName;
+    private final String feedUrl;
     private final RestClient newsRestClient;
-    private final NewsCollectionProperties properties;
+
+    public RssNewsClient(String sourceName, String feedUrl, RestClient newsRestClient) {
+        this.sourceName = sourceName;
+        this.feedUrl = feedUrl;
+        this.newsRestClient = newsRestClient;
+    }
 
     @Override
     public String sourceName() {
-        return SOURCE_NAME;
+        return sourceName;
     }
 
     @Override
     public List<CollectedArticle> fetch(String query) {
-        String feedUrl = resolveFeedUrl();
         String body = newsRestClient.get()
             .uri(feedUrl)
             .retrieve()
@@ -51,17 +50,6 @@ public class HankyungRssClient implements NewsSourceClient {
         }
 
         return parseRss(body);
-    }
-
-    private String resolveFeedUrl() {
-        if (properties.rss() == null) {
-            return DEFAULT_FEED;
-        }
-        return properties.rss().stream()
-            .filter(feed -> SOURCE_NAME.equalsIgnoreCase(feed.source()))
-            .findFirst()
-            .map(NewsCollectionProperties.RssFeed::url)
-            .orElse(DEFAULT_FEED);
     }
 
     List<CollectedArticle> parseRss(String xml) {
@@ -89,7 +77,7 @@ public class HankyungRssClient implements NewsSourceClient {
                     continue;
                 }
                 result.add(new CollectedArticle(
-                    SOURCE_NAME,
+                    sourceName,
                     link.trim(),
                     stripCdata(title),
                     stripCdata(description),
@@ -98,7 +86,7 @@ public class HankyungRssClient implements NewsSourceClient {
             }
             return result;
         } catch (Exception e) {
-            log.warn("RSS 파싱 실패 source={}", SOURCE_NAME, e);
+            log.warn("RSS 파싱 실패 source={}", sourceName, e);
             return List.of();
         }
     }

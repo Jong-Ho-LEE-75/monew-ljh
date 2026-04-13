@@ -4,12 +4,13 @@ import com.monew.common.metrics.MonewMetrics;
 import com.monew.domain.article.entity.Article;
 import com.monew.domain.article.event.ArticleCollectedEvent;
 import com.monew.domain.article.repository.ArticleRepository;
+import com.monew.domain.article.collector.client.RssNewsClient;
 import com.monew.domain.interest.entity.Interest;
 import com.monew.domain.interest.entity.InterestKeyword;
 import com.monew.domain.interest.repository.InterestRepository;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -18,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ArticleCollector {
 
     private final List<NewsSourceClient> clients;
@@ -26,6 +26,23 @@ public class ArticleCollector {
     private final ArticleRepository articleRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final MonewMetrics metrics;
+
+    public ArticleCollector(
+        List<NewsSourceClient> clients,
+        List<RssNewsClient> rssNewsClients,
+        InterestRepository interestRepository,
+        ArticleRepository articleRepository,
+        ApplicationEventPublisher eventPublisher,
+        MonewMetrics metrics
+    ) {
+        List<NewsSourceClient> allClients = new ArrayList<>(clients);
+        allClients.addAll(rssNewsClients);
+        this.clients = allClients;
+        this.interestRepository = interestRepository;
+        this.articleRepository = articleRepository;
+        this.eventPublisher = eventPublisher;
+        this.metrics = metrics;
+    }
 
     @Transactional
     public CollectionResult collect() {
