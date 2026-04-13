@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,8 +28,15 @@ public class UserActivityService {
     private final UserActivityRepository userActivityRepository;
 
     public UserActivity getActivity(UUID userId) {
-        return userActivityRepository.findByUserId(userId)
+        UserActivity activity = userActivityRepository.findByUserId(userId)
             .orElseThrow(() -> new UserActivityNotFoundException(userId));
+        Set<UUID> likedCommentIds = activity.getRecentCommentLikes().stream()
+            .map(CommentLikeSnapshot::getCommentId)
+            .collect(java.util.stream.Collectors.toSet());
+        for (CommentSnapshot c : activity.getRecentComments()) {
+            c.setLikedByMe(likedCommentIds.contains(c.getId()));
+        }
+        return activity;
     }
 
     public UserActivity initializeOnUserCreated(UUID userId, String email, String nickname, Instant createdAt) {
@@ -91,6 +99,20 @@ public class UserActivityService {
         activity.getRecentCommentLikes().add(snapshot);
         trimRecent(activity.getRecentCommentLikes(), CommentLikeSnapshot::getCreatedAt);
         userActivityRepository.save(activity);
+    }
+
+    public void updateCommentLikeCount(UUID commentOwnerId, UUID commentId, long likeCount) {
+        UserActivity activity = getOrSkip(commentOwnerId);
+        if (activity == null) {
+            return;
+        }
+        for (CommentSnapshot c : activity.getRecentComments()) {
+            if (c.getId().equals(commentId)) {
+                c.setLikeCount(likeCount);
+                userActivityRepository.save(activity);
+                return;
+            }
+        }
     }
 
     public void projectCommentUnliked(UUID userId, UUID commentId) {

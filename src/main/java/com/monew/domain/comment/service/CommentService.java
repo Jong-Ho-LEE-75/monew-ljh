@@ -165,7 +165,8 @@ public class CommentService {
             .ifPresent(like -> {
                 commentLikeRepository.delete(like);
                 comment.decreaseLikeCount();
-                eventPublisher.publishEvent(new CommentUnlikedEvent(commentId, currentUserId));
+                eventPublisher.publishEvent(new CommentUnlikedEvent(
+                    commentId, comment.getUser().getId(), currentUserId, comment.getLikeCount()));
             });
         return commentMapper.toDto(comment, false);
     }

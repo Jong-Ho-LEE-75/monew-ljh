@@ -62,7 +62,10 @@ public class UserActivity {
         private UUID userId;
         private String userNickname;
         private String content;
+        @lombok.Setter
         private long likeCount;
+        @lombok.Setter
+        private boolean likedByMe;
         private Instant createdAt;
     }
 

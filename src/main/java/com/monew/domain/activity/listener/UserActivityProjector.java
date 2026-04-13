@@ -74,12 +74,18 @@ public class UserActivityProjector {
                 .createdAt(java.time.Instant.now())
                 .build()
         ));
+        safely("updateCommentLikeCount", () -> userActivityService.updateCommentLikeCount(
+            event.commentOwnerId(), event.commentId(), event.commentLikeCount()
+        ));
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onCommentUnliked(CommentUnlikedEvent event) {
         safely("projectCommentUnliked", () ->
             userActivityService.projectCommentUnliked(event.likerId(), event.commentId()));
+        safely("updateCommentLikeCount", () -> userActivityService.updateCommentLikeCount(
+            event.commentOwnerId(), event.commentId(), event.commentLikeCount()
+        ));
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

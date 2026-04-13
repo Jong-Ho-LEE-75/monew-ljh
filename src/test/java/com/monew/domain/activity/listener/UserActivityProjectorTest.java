@@ -75,7 +75,7 @@ class UserActivityProjectorTest {
     void 댓글_좋아요_취소_이벤트_프로젝션() {
         UUID likerId = UUID.randomUUID();
         UUID commentId = UUID.randomUUID();
-        projector.onCommentUnliked(new CommentUnlikedEvent(commentId, likerId));
+        projector.onCommentUnliked(new CommentUnlikedEvent(commentId, UUID.randomUUID(), likerId, 0L));
         verify(userActivityService).projectCommentUnliked(likerId, commentId);
     }
 
