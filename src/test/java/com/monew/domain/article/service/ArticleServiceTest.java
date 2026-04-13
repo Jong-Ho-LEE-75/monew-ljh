@@ -3,11 +3,13 @@ package com.monew.domain.article.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import org.mockito.ArgumentMatchers;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 
 import com.monew.common.dto.CursorRequest;
 import com.monew.common.dto.PageResponse;
+import com.monew.domain.article.collector.config.NewsCollectionProperties;
 import com.monew.domain.article.dto.ArticleDto;
 import com.monew.domain.article.dto.ArticleSearchCondition;
 import com.monew.domain.article.entity.Article;
@@ -53,6 +55,9 @@ class ArticleServiceTest {
     @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private NewsCollectionProperties newsProperties;
+
     @InjectMocks
     private ArticleService articleService;
 
@@ -92,7 +97,7 @@ class ArticleServiceTest {
             Article b = newArticle("b");
             Page<Article> page = new PageImpl<>(List.of(a, b));
 
-            given(articleRepository.findAll(any(Specification.class), any(Pageable.class)))
+            given(articleRepository.findAll(ArgumentMatchers.<Specification<Article>>any(), any(Pageable.class)))
                 .willReturn(page);
             given(articleMapper.toDto(a, false)).willReturn(dto(a, false));
             given(articleMapper.toDto(b, false)).willReturn(dto(b, false));
@@ -112,7 +117,7 @@ class ArticleServiceTest {
             Article a = newArticle("a");
             Page<Article> page = new PageImpl<>(List.of(a));
 
-            given(articleRepository.findAll(any(Specification.class), any(Pageable.class)))
+            given(articleRepository.findAll(ArgumentMatchers.<Specification<Article>>any(), any(Pageable.class)))
                 .willReturn(page);
             given(articleMapper.toDto(a, false)).willReturn(dto(a, false));
 
@@ -132,7 +137,7 @@ class ArticleServiceTest {
             Article a = newArticle("a");
             Page<Article> page = new PageImpl<>(List.of(a));
 
-            given(articleRepository.findAll(any(Specification.class), any(Pageable.class)))
+            given(articleRepository.findAll(ArgumentMatchers.<Specification<Article>>any(), any(Pageable.class)))
                 .willReturn(page);
             given(articleMapper.toDto(a, false)).willReturn(dto(a, false));
 
@@ -153,7 +158,7 @@ class ArticleServiceTest {
             Article a = newArticle("a");
             Page<Article> page = new PageImpl<>(List.of(a));
 
-            given(articleRepository.findAll(any(Specification.class), any(Pageable.class)))
+            given(articleRepository.findAll(ArgumentMatchers.<Specification<Article>>any(), any(Pageable.class)))
                 .willReturn(page);
             given(articleMapper.toDto(a, true)).willReturn(dto(a, true));
             given(articleViewRepository.existsByArticle_IdAndUser_Id(any(), any())).willReturn(true);
@@ -254,6 +259,70 @@ class ArticleServiceTest {
             articleService.softDelete(articleId);
 
             assertThat(article.isDeleted()).isTrue();
+        }
+    }
+
+    @Nested
+    @DisplayName("findById")
+    class FindById {
+
+        @Test
+        void 정상_조회() {
+            UUID articleId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+            Article article = newArticle("a");
+            given(articleRepository.findById(articleId)).willReturn(Optional.of(article));
+            given(articleMapper.toDto(article, false)).willReturn(dto(article, false));
+
+            ArticleDto result = articleService.findById(articleId, userId);
+
+            assertThat(result.title()).isEqualTo("a");
+        }
+
+        @Test
+        void 삭제된_기사_조회_시_예외() {
+            UUID articleId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+            Article article = newArticle("a");
+            article.softDelete();
+            given(articleRepository.findById(articleId)).willReturn(Optional.of(article));
+
+            assertThatThrownBy(() -> articleService.findById(articleId, userId))
+                .isInstanceOf(ArticleNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("getSources")
+    class GetSources {
+
+        @Test
+        void Naver_활성_시_포함() {
+            NewsCollectionProperties.Naver naver = new NewsCollectionProperties.Naver(
+                "https://openapi.naver.com", "id", "secret", 20);
+            given(newsProperties.naver()).willReturn(naver);
+            given(newsProperties.rss()).willReturn(List.of(
+                new NewsCollectionProperties.RssFeed("HANKYUNG", "https://hankyung.com/feed"),
+                new NewsCollectionProperties.RssFeed("CHOSUN", "https://chosun.com/rss")
+            ));
+
+            List<String> sources = articleService.getSources();
+
+            assertThat(sources).containsExactly("NAVER", "HANKYUNG", "CHOSUN");
+        }
+
+        @Test
+        void Naver_비활성_시_제외() {
+            NewsCollectionProperties.Naver naver = new NewsCollectionProperties.Naver(
+                "https://openapi.naver.com", "", "", 20);
+            given(newsProperties.naver()).willReturn(naver);
+            given(newsProperties.rss()).willReturn(List.of(
+                new NewsCollectionProperties.RssFeed("YEONHAP", "https://yna.co.kr/rss")
+            ));
+
+            List<String> sources = articleService.getSources();
+
+            assertThat(sources).containsExactly("YEONHAP");
         }
     }
 }
