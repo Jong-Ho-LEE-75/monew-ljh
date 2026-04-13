@@ -56,11 +56,11 @@ class CommentControllerTest {
         UUID articleId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         PageResponse<CommentDto> page = new PageResponse<>(List.of(sampleDto()), null, 1, false, null);
-        given(commentService.findByArticle(eq(articleId), eq(userId), eq(CommentSortBy.LIKE_COUNT), any(CursorRequest.class)))
+        given(commentService.findByArticle(eq(articleId), eq(userId), eq(CommentSortBy.LIKE_COUNT), any(), any(CursorRequest.class)))
             .willReturn(page);
 
         ResponseEntity<PageResponse<CommentDto>> response = controller.findByArticle(
-            articleId, userId, CommentSortBy.LIKE_COUNT, null, 10);
+            articleId, userId, CommentSortBy.LIKE_COUNT, null, null, 10);
 
         assertThat(response.getBody()).isEqualTo(page);
     }

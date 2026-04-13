@@ -275,7 +275,7 @@ class CommentServiceTest {
                 .willReturn(List.of(c1));
 
             PageResponse<CommentDto> page = commentService.findByArticle(
-                article.getId(), null, CommentSortBy.LIKE_COUNT, new CursorRequest(null, 10));
+                article.getId(), null, CommentSortBy.LIKE_COUNT, null, new CursorRequest(null, 10));
 
             assertThat(page.content()).hasSize(1);
             assertThat(page.content().get(0).likeCount()).isEqualTo(3);
@@ -290,7 +290,7 @@ class CommentServiceTest {
                 .willReturn(List.of());
 
             commentService.findByArticle(
-                article.getId(), null, CommentSortBy.LIKE_COUNT, new CursorRequest("5", 10));
+                article.getId(), null, CommentSortBy.LIKE_COUNT, null, new CursorRequest("5", 10));
 
             verify(commentRepository).findPageByArticleAfterLikes(
                 eq(article.getId()), eq(5L),
@@ -304,7 +304,7 @@ class CommentServiceTest {
                 .willReturn(List.of());
 
             commentService.findByArticle(
-                article.getId(), null, null, new CursorRequest(null, 10));
+                article.getId(), null, null, null, new CursorRequest(null, 10));
 
             verify(commentRepository).findFirstPageByArticle(
                 eq(article.getId()), any(org.springframework.data.domain.Pageable.class));
@@ -318,7 +318,7 @@ class CommentServiceTest {
                 .willReturn(List.of());
 
             commentService.findByArticle(
-                article.getId(), null, CommentSortBy.CREATED_AT,
+                article.getId(), null, CommentSortBy.CREATED_AT, null,
                 new CursorRequest("2026-04-10T00:00:00Z", 10));
 
             verify(commentRepository).findPageByArticleAfter(
@@ -333,7 +333,7 @@ class CommentServiceTest {
                 .willReturn(List.of());
 
             commentService.findByArticle(
-                article.getId(), null, CommentSortBy.CREATED_AT,
+                article.getId(), null, CommentSortBy.CREATED_AT, null,
                 new CursorRequest("not-instant", 10));
 
             verify(commentRepository).findFirstPageByArticle(
@@ -347,7 +347,7 @@ class CommentServiceTest {
                 .willReturn(List.of());
 
             commentService.findByArticle(
-                article.getId(), null, CommentSortBy.LIKE_COUNT,
+                article.getId(), null, CommentSortBy.LIKE_COUNT, null,
                 new CursorRequest("oops", 10));
 
             verify(commentRepository).findFirstPageByArticleOrderByLikes(
@@ -366,10 +366,74 @@ class CommentServiceTest {
                 .willReturn(true);
 
             PageResponse<CommentDto> page = commentService.findByArticle(
-                article.getId(), otherUser.getId(), null, new CursorRequest(null, 10));
+                article.getId(), otherUser.getId(), null, null, new CursorRequest(null, 10));
 
             assertThat(page.content()).hasSize(1);
             assertThat(page.content().get(0).likedByMe()).isTrue();
+        }
+
+        @Test
+        void 오름차순_createdAt_커서_없음() {
+            given(commentRepository.findFirstPageByArticleAsc(
+                eq(article.getId()), any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(List.of());
+
+            commentService.findByArticle(
+                article.getId(), null, CommentSortBy.CREATED_AT,
+                com.monew.domain.article.dto.SortDirection.ASC,
+                new CursorRequest(null, 10));
+
+            verify(commentRepository).findFirstPageByArticleAsc(
+                eq(article.getId()), any(org.springframework.data.domain.Pageable.class));
+        }
+
+        @Test
+        void 오름차순_createdAt_커서_전달() {
+            given(commentRepository.findPageByArticleAfterAsc(
+                eq(article.getId()), any(java.time.Instant.class),
+                any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(List.of());
+
+            commentService.findByArticle(
+                article.getId(), null, CommentSortBy.CREATED_AT,
+                com.monew.domain.article.dto.SortDirection.ASC,
+                new CursorRequest("2026-04-10T00:00:00Z", 10));
+
+            verify(commentRepository).findPageByArticleAfterAsc(
+                eq(article.getId()), any(java.time.Instant.class),
+                any(org.springframework.data.domain.Pageable.class));
+        }
+
+        @Test
+        void 오름차순_likeCount_커서_없음() {
+            given(commentRepository.findFirstPageByArticleOrderByLikesAsc(
+                eq(article.getId()), any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(List.of());
+
+            commentService.findByArticle(
+                article.getId(), null, CommentSortBy.LIKE_COUNT,
+                com.monew.domain.article.dto.SortDirection.ASC,
+                new CursorRequest(null, 10));
+
+            verify(commentRepository).findFirstPageByArticleOrderByLikesAsc(
+                eq(article.getId()), any(org.springframework.data.domain.Pageable.class));
+        }
+
+        @Test
+        void 오름차순_likeCount_커서_전달() {
+            given(commentRepository.findPageByArticleAfterLikesAsc(
+                eq(article.getId()), eq(3L),
+                any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(List.of());
+
+            commentService.findByArticle(
+                article.getId(), null, CommentSortBy.LIKE_COUNT,
+                com.monew.domain.article.dto.SortDirection.ASC,
+                new CursorRequest("3", 10));
+
+            verify(commentRepository).findPageByArticleAfterLikesAsc(
+                eq(article.getId()), eq(3L),
+                any(org.springframework.data.domain.Pageable.class));
         }
     }
 }

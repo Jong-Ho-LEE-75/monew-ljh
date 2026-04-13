@@ -5,6 +5,7 @@ import com.monew.domain.interest.entity.Interest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -16,7 +17,12 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Table(name = "articles")
+@Table(name = "articles", indexes = {
+    @Index(name = "idx_articles_published_at", columnList = "publishedAt"),
+    @Index(name = "idx_articles_view_count", columnList = "viewCount"),
+    @Index(name = "idx_articles_comment_count", columnList = "commentCount"),
+    @Index(name = "idx_articles_deleted_published_at", columnList = "deleted, publishedAt")
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Article extends BaseUpdatableEntity {
 

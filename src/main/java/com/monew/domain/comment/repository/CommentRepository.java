@@ -58,4 +58,52 @@ public interface CommentRepository extends JpaRepository<Comment, UUID> {
         @Param("cursor") Long cursor,
         Pageable pageable
     );
+
+    @Query("""
+        select c from Comment c
+        where c.article.id = :articleId
+          and c.deleted = false
+        order by c.createdAt asc
+        """)
+    List<Comment> findFirstPageByArticleAsc(
+        @Param("articleId") UUID articleId,
+        Pageable pageable
+    );
+
+    @Query("""
+        select c from Comment c
+        where c.article.id = :articleId
+          and c.deleted = false
+          and c.createdAt > :cursor
+        order by c.createdAt asc
+        """)
+    List<Comment> findPageByArticleAfterAsc(
+        @Param("articleId") UUID articleId,
+        @Param("cursor") Instant cursor,
+        Pageable pageable
+    );
+
+    @Query("""
+        select c from Comment c
+        where c.article.id = :articleId
+          and c.deleted = false
+        order by c.likeCount asc, c.createdAt asc
+        """)
+    List<Comment> findFirstPageByArticleOrderByLikesAsc(
+        @Param("articleId") UUID articleId,
+        Pageable pageable
+    );
+
+    @Query("""
+        select c from Comment c
+        where c.article.id = :articleId
+          and c.deleted = false
+          and c.likeCount > :cursor
+        order by c.likeCount asc, c.createdAt asc
+        """)
+    List<Comment> findPageByArticleAfterLikesAsc(
+        @Param("articleId") UUID articleId,
+        @Param("cursor") Long cursor,
+        Pageable pageable
+    );
 }

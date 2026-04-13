@@ -6,6 +6,7 @@ import com.monew.domain.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
@@ -17,7 +18,10 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Table(name = "comments")
+@Table(name = "comments", indexes = {
+    @Index(name = "idx_comments_article_deleted_created", columnList = "article_id, deleted, createdAt"),
+    @Index(name = "idx_comments_article_deleted_likes", columnList = "article_id, deleted, likeCount")
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Comment extends BaseUpdatableEntity {
 
