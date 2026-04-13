@@ -168,6 +168,68 @@ class UserActivityServiceTest {
     }
 
     @Test
+    void getActivity_likedByMe_계산() {
+        UUID userId = UUID.randomUUID();
+        UUID commentId1 = UUID.randomUUID();
+        UUID commentId2 = UUID.randomUUID();
+
+        List<CommentSnapshot> comments = new ArrayList<>();
+        comments.add(CommentSnapshot.builder().id(commentId1).content("댓글1").createdAt(Instant.now()).build());
+        comments.add(CommentSnapshot.builder().id(commentId2).content("댓글2").createdAt(Instant.now()).build());
+
+        List<CommentLikeSnapshot> likes = new ArrayList<>();
+        likes.add(CommentLikeSnapshot.builder().commentId(commentId1).createdAt(Instant.now()).build());
+
+        UserActivity activity = UserActivity.builder()
+            .userId(userId)
+            .recentComments(comments)
+            .recentCommentLikes(likes)
+            .build();
+
+        given(userActivityRepository.findByUserId(userId)).willReturn(Optional.of(activity));
+
+        UserActivity result = service.getActivity(userId);
+
+        assertThat(result.getRecentComments().get(0).isLikedByMe()).isTrue();
+        assertThat(result.getRecentComments().get(1).isLikedByMe()).isFalse();
+    }
+
+    @Test
+    void updateCommentLikeCount_스냅샷_갱신() {
+        UUID userId = UUID.randomUUID();
+        UUID commentId = UUID.randomUUID();
+        List<CommentSnapshot> comments = new ArrayList<>();
+        comments.add(CommentSnapshot.builder().id(commentId).content("c").likeCount(0).createdAt(Instant.now()).build());
+
+        UserActivity activity = UserActivity.builder()
+            .userId(userId)
+            .recentComments(comments)
+            .build();
+
+        given(userActivityRepository.findByUserId(userId)).willReturn(Optional.of(activity));
+        given(userActivityRepository.save(any(UserActivity.class))).willAnswer(inv -> inv.getArgument(0));
+
+        service.updateCommentLikeCount(userId, commentId, 5L);
+
+        assertThat(activity.getRecentComments().get(0).getLikeCount()).isEqualTo(5);
+    }
+
+    @Test
+    void updateCommentLikeCount_해당_댓글_없으면_저장_안함() {
+        UUID userId = UUID.randomUUID();
+        UserActivity activity = UserActivity.builder()
+            .userId(userId)
+            .recentComments(new ArrayList<>())
+            .build();
+
+        given(userActivityRepository.findByUserId(userId)).willReturn(Optional.of(activity));
+
+        service.updateCommentLikeCount(userId, UUID.randomUUID(), 5L);
+
+        verify(userActivityRepository, never()).save(any());
+    }
+
+    @Test
     void projectArticleViewed_문서없으면_저장_호출_안함() {
         UUID userId = UUID.randomUUID();
         given(userActivityRepository.findByUserId(userId)).willReturn(Optional.empty());
