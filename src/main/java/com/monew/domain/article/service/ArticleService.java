@@ -17,7 +17,9 @@ import com.monew.domain.article.repository.ArticleViewRepository;
 import com.monew.domain.user.entity.User;
 import com.monew.domain.user.exception.UserNotFoundException;
 import com.monew.domain.user.repository.UserRepository;
+import com.monew.domain.article.collector.config.NewsCollectionProperties;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +42,7 @@ public class ArticleService {
     private final UserRepository userRepository;
     private final ArticleMapper articleMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final NewsCollectionProperties newsProperties;
 
     public PageResponse<ArticleDto> findAll(
         ArticleSearchCondition condition,
@@ -71,6 +74,20 @@ public class ArticleService {
             case COMMENT_COUNT -> "commentCount";
             default -> "publishedAt";
         };
+    }
+
+    public ArticleDto findById(UUID articleId, UUID userId) {
+        Article article = findActiveArticle(articleId);
+        return articleMapper.toDto(article, isViewed(userId, article.getId()));
+    }
+
+    public List<String> getSources() {
+        List<String> sources = new ArrayList<>();
+        if (newsProperties.naver() != null && newsProperties.naver().isEnabled()) {
+            sources.add("NAVER");
+        }
+        newsProperties.rss().forEach(feed -> sources.add(feed.source()));
+        return sources;
     }
 
     @Transactional

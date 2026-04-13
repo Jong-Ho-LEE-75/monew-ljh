@@ -51,7 +51,20 @@ public class ArticleController {
         );
     }
 
-    @PostMapping("/{articleId}/views")
+    @GetMapping("/{articleId}")
+    public ResponseEntity<ArticleDto> getArticle(
+        @PathVariable UUID articleId,
+        @RequestHeader(USER_HEADER) UUID userId
+    ) {
+        return ResponseEntity.ok(articleService.findById(articleId, userId));
+    }
+
+    @GetMapping("/sources")
+    public ResponseEntity<List<String>> getSources() {
+        return ResponseEntity.ok(articleService.getSources());
+    }
+
+    @PostMapping("/{articleId}/article-views")
     public ResponseEntity<ArticleDto> view(
         @PathVariable UUID articleId,
         @RequestHeader(USER_HEADER) UUID userId
