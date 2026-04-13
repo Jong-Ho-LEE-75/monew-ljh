@@ -11,7 +11,7 @@ public record UserRegisterRequest(
     String email,
 
     @NotBlank
-    @Size(min = 2, max = 50)
+    @Size(min = 1, max = 20)
     String nickname,
 
     @NotBlank
