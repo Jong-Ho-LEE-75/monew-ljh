@@ -152,6 +152,7 @@ public class CommentService {
             comment.getArticle().getId(),
             comment.getArticle().getTitle(),
             comment.getContent(),
+            comment.getLikeCount(),
             comment.getCreatedAt()
         ));
         return commentMapper.toDto(comment, true);

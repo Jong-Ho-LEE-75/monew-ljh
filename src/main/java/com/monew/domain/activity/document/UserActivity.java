@@ -79,6 +79,7 @@ public class UserActivity {
         private UUID commentUserId;
         private String commentUserNickname;
         private String commentContent;
+        private long commentLikeCount;
         private Instant commentCreatedAt;
     }
 

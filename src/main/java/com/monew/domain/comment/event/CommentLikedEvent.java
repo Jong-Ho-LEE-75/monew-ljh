@@ -11,6 +11,7 @@ public record CommentLikedEvent(
     UUID articleId,
     String articleTitle,
     String commentContent,
+    long commentLikeCount,
     Instant commentCreatedAt
 ) {
 
