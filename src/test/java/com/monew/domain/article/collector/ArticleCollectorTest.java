@@ -39,7 +39,7 @@ class ArticleCollectorTest {
     private final MonewMetrics metrics = new MonewMetrics(new SimpleMeterRegistry());
 
     private ArticleCollector collector(NewsSourceClient... clients) {
-        return new ArticleCollector(List.of(clients), interestRepository, articleRepository, eventPublisher, metrics);
+        return new ArticleCollector(List.of(clients), List.of(), interestRepository, articleRepository, eventPublisher, metrics);
     }
 
     private CollectedArticle candidate(String title, String url) {

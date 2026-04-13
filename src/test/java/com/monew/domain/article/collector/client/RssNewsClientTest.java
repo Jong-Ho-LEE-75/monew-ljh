@@ -5,18 +5,16 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import com.monew.domain.article.collector.CollectedArticle;
-import com.monew.domain.article.collector.config.NewsCollectionProperties;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
-class HankyungRssClientTest {
+class RssNewsClientTest {
 
-    private final HankyungRssClient client = new HankyungRssClient(
-        null,
-        new NewsCollectionProperties(null, List.of())
+    private final RssNewsClient client = new RssNewsClient(
+        "HANKYUNG", "https://www.hankyung.com/feed/all-news", null
     );
 
     @Test
@@ -107,11 +105,8 @@ class HankyungRssClientTest {
         server.expect(requestTo("https://feed.custom/hk"))
             .andRespond(withSuccess(xml, MediaType.APPLICATION_XML));
 
-        NewsCollectionProperties properties = new NewsCollectionProperties(
-            null,
-            List.of(new NewsCollectionProperties.RssFeed("HANKYUNG", "https://feed.custom/hk"))
-        );
-        HankyungRssClient httpClient = new HankyungRssClient(builder.build(), properties);
+        RssNewsClient httpClient = new RssNewsClient(
+            "HANKYUNG", "https://feed.custom/hk", builder.build());
 
         List<CollectedArticle> result = httpClient.fetch("query");
 
@@ -128,36 +123,21 @@ class HankyungRssClientTest {
         server.expect(requestTo("https://www.hankyung.com/feed/all-news"))
             .andRespond(withSuccess("", MediaType.APPLICATION_XML));
 
-        HankyungRssClient httpClient = new HankyungRssClient(
-            builder.build(),
-            new NewsCollectionProperties(null, List.of())
-        );
+        RssNewsClient httpClient = new RssNewsClient(
+            "HANKYUNG", "https://www.hankyung.com/feed/all-news", builder.build());
 
         assertThat(httpClient.fetch("q")).isEmpty();
     }
 
     @Test
-    void fetch_설정된_RSS_없으면_기본_피드_사용() {
-        RestClient.Builder builder = RestClient.builder();
-        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-
-        server.expect(requestTo("https://www.hankyung.com/feed/all-news"))
-            .andRespond(withSuccess("<rss><channel/></rss>", MediaType.APPLICATION_XML));
-
-        HankyungRssClient httpClient = new HankyungRssClient(
-            builder.build(),
-            new NewsCollectionProperties(
-                null,
-                List.of(new NewsCollectionProperties.RssFeed("OTHER", "https://x"))
-            )
-        );
-
-        assertThat(httpClient.fetch("q")).isEmpty();
-        server.verify();
+    void 다른_소스명으로_생성_가능() {
+        RssNewsClient chosunClient = new RssNewsClient(
+            "CHOSUN", "https://www.chosun.com/rss", null);
+        assertThat(chosunClient.sourceName()).isEqualTo("CHOSUN");
     }
 
     @Test
-    void sourceName_상수() {
+    void sourceName_반환() {
         assertThat(client.sourceName()).isEqualTo("HANKYUNG");
     }
 }
