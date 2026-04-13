@@ -55,7 +55,7 @@ class CommentControllerTest {
     void findByArticle_커서_위임() {
         UUID articleId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        PageResponse<CommentDto> page = new PageResponse<>(List.of(sampleDto()), null, 1, false);
+        PageResponse<CommentDto> page = new PageResponse<>(List.of(sampleDto()), null, 1, false, null);
         given(commentService.findByArticle(eq(articleId), eq(userId), eq(CommentSortBy.LIKE_COUNT), any(CursorRequest.class)))
             .willReturn(page);
 

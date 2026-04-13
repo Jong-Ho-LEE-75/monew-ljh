@@ -41,7 +41,7 @@ class NotificationControllerTest {
     @Test
     void findUnconfirmed_위임() {
         UUID userId = UUID.randomUUID();
-        PageResponse<NotificationDto> page = new PageResponse<>(List.of(sampleDto()), null, 1, false);
+        PageResponse<NotificationDto> page = new PageResponse<>(List.of(sampleDto()), null, 1, false, null);
         given(notificationService.findUnconfirmed(eq(userId), any(CursorRequest.class)))
             .willReturn(page);
 
