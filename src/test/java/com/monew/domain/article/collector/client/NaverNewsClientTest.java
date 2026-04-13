@@ -132,6 +132,44 @@ class NaverNewsClientTest {
     }
 
     @Test
+    void fetch_한글_쿼리_인코딩_정상() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+
+        String json = """
+            {
+              "items": [
+                {
+                  "title": "인공지능 뉴스",
+                  "originallink": "https://orig/1",
+                  "link": "https://naver/1",
+                  "description": "AI 관련 뉴스",
+                  "pubDate": "Wed, 10 Apr 2026 09:00:00 +0900"
+                }
+              ]
+            }
+            """;
+
+        server.expect(requestTo(Matchers.containsString("query=%EC%9D%B8%EA%B3%B5%EC%A7%80%EB%8A%A5")))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+        NewsCollectionProperties properties = new NewsCollectionProperties(
+            new NewsCollectionProperties.Naver(
+                "https://openapi.naver.com/v1/search/news.json",
+                "cid", "csec", 10),
+            List.of()
+        );
+        NaverNewsClient client = new NaverNewsClient(builder.build(), properties);
+
+        List<CollectedArticle> result = client.fetch("인공지능");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).title()).isEqualTo("인공지능 뉴스");
+        server.verify();
+    }
+
+    @Test
     void fetch_HTTP_오류_예외_전파() {
         RestClient.Builder builder = RestClient.builder();
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();

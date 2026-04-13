@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.monew.domain.article.collector.CollectedArticle;
 import com.monew.domain.article.collector.NewsSourceClient;
 import com.monew.domain.article.collector.config.NewsCollectionProperties;
+import java.net.URI;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -41,12 +42,13 @@ public class NaverNewsClient implements NewsSourceClient {
             return List.of();
         }
 
-        String uri = UriComponentsBuilder.fromUriString(naver.baseUrl())
+        URI uri = UriComponentsBuilder.fromUriString(naver.baseUrl())
             .queryParam("query", query)
             .queryParam("display", naver.displayOrDefault())
             .queryParam("sort", "date")
-            .build(true)
-            .toUriString();
+            .encode()
+            .build()
+            .toUri();
 
         NaverSearchResponse response = newsRestClient.get()
             .uri(uri)
