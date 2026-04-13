@@ -37,7 +37,8 @@ public class NotificationService {
             ? notificationRepository.findFirstUnconfirmedPage(userId, pageable)
             : notificationRepository.findUnconfirmedPageAfter(userId, cursor, pageable);
         List<NotificationDto> dtos = page.stream().map(notificationMapper::toDto).toList();
-        return PageResponse.of(dtos, size, dto -> dto.createdAt().toString());
+        long totalElements = notificationRepository.countByUserIdAndConfirmedFalse(userId);
+        return PageResponse.of(dtos, size, dto -> dto.createdAt().toString(), totalElements);
     }
 
     @Transactional

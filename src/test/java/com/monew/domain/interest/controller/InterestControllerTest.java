@@ -55,7 +55,7 @@ class InterestControllerTest {
     @Test
     void findAll_위임() {
         UUID userId = UUID.randomUUID();
-        PageResponse<InterestDto> page = new PageResponse<>(List.of(sampleDto()), null, 1, false);
+        PageResponse<InterestDto> page = new PageResponse<>(List.of(sampleDto()), null, 1, false, null);
         given(interestService.findAll(any(InterestSearchCondition.class), any(CursorRequest.class), eq(userId)))
             .willReturn(page);
 

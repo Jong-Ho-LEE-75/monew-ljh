@@ -43,7 +43,7 @@ class ArticleControllerTest {
     void findAll_검색조건_조립_위임() {
         UUID userId = UUID.randomUUID();
         UUID interestId = UUID.randomUUID();
-        PageResponse<ArticleDto> page = new PageResponse<>(List.of(sampleDto()), null, 1, false);
+        PageResponse<ArticleDto> page = new PageResponse<>(List.of(sampleDto()), null, 1, false, null);
         given(articleService.findAll(any(ArticleSearchCondition.class), any(CursorRequest.class), eq(userId)))
             .willReturn(page);
 

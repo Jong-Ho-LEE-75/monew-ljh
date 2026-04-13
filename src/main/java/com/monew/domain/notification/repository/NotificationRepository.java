@@ -36,6 +36,8 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
         Pageable pageable
     );
 
+    long countByUserIdAndConfirmedFalse(UUID userId);
+
     @Modifying
     @Query("update Notification n set n.confirmed = true where n.user.id = :userId and n.confirmed = false")
     int confirmAllByUserId(@Param("userId") UUID userId);
