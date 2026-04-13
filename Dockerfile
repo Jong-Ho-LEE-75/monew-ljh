@@ -19,10 +19,11 @@ ENV PROJECT_VERSION=${PROJECT_VERSION}
 ENV JVM_OPTS=""
 ENV SPRING_PROFILES_ACTIVE=prod
 
-RUN addgroup -S monew && adduser -S monew -G monew
+RUN apk add --no-cache curl && \
+    addgroup -S monew && adduser -S monew -G monew
 COPY --from=builder /build/build/libs/*.jar /app/app.jar
 RUN chown -R monew:monew /app
 USER monew
 
-EXPOSE 80
+EXPOSE 8080
 ENTRYPOINT ["sh", "-c", "java $JVM_OPTS -jar /app/app.jar"]
