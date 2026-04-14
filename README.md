@@ -92,6 +92,7 @@ src/main/java/com/monew/
 
 - ✨ 표시: 2026-04-11 P0 버그 수정 및 A2 구현에서 반영한 항목
 - 🆕 표시: 2026-04-11 2차 보강(검증 리포트 PARTIAL/FAIL 해소)에서 반영한 항목
+- 🧪 표시: 2026-04-14 TDD Red-Green-Refactor 사이클로 구현한 항목 (요구사항 외 선택 구현 포함)
 
 ### 기능 요구사항
 
@@ -101,6 +102,7 @@ src/main/java/com/monew/
 - [x] U3 사용자 정보 조회
 - [x] U4 닉네임 수정
 - [x] U5 사용자 논리 삭제 🆕 deletedAt 타임스탬프 + 1일 경과 완전 삭제 배치
+- [x] 🧪 비밀번호 변경 (요구사항 외 선택 구현) — `PUT /api/users/{userId}/password` 현재 비밀번호 검증 후 BCrypt 재해싱
 
 #### 관심사
 - [x] I1 관심사 등록 (Levenshtein 80% 유사도 검증)
