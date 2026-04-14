@@ -2,6 +2,7 @@ package com.monew.domain.user.service;
 
 import com.monew.domain.user.dto.UserDto;
 import com.monew.domain.user.dto.request.UserLoginRequest;
+import com.monew.domain.user.dto.request.UserPasswordChangeRequest;
 import com.monew.domain.user.dto.request.UserRegisterRequest;
 import com.monew.domain.user.dto.request.UserUpdateRequest;
 import com.monew.domain.user.entity.User;
@@ -72,6 +73,11 @@ public class UserService {
         User user = getActiveUser(userId);
         user.updateNickname(request.nickname());
         return userMapper.toDto(user);
+    }
+
+    @Transactional
+    public UserDto changePassword(UUID userId, UserPasswordChangeRequest request) {
+        throw new UnsupportedOperationException("미구현 — Red 단계");
     }
 
     @Transactional

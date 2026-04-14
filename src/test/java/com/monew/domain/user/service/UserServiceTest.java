@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 
 import com.monew.domain.user.dto.UserDto;
 import com.monew.domain.user.dto.request.UserLoginRequest;
+import com.monew.domain.user.dto.request.UserPasswordChangeRequest;
 import com.monew.domain.user.dto.request.UserRegisterRequest;
 import com.monew.domain.user.dto.request.UserUpdateRequest;
 import com.monew.domain.user.entity.User;
@@ -191,6 +192,72 @@ class UserServiceTest {
             given(userRepository.findById(id)).willReturn(Optional.empty());
 
             assertThatThrownBy(() -> userService.update(id, new UserUpdateRequest("new")))
+                .isInstanceOf(UserNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("changePassword")
+    class ChangePassword {
+
+        @Test
+        void 정상_변경_새_비밀번호_해싱_저장() {
+            UUID id = UUID.randomUUID();
+            User user = newUser("a@a.com", "nick", "{bcrypt}old");
+            UserPasswordChangeRequest request =
+                new UserPasswordChangeRequest("oldPass", "newPass");
+
+            given(userRepository.findById(id)).willReturn(Optional.of(user));
+            given(passwordEncoder.matches("oldPass", "{bcrypt}old")).willReturn(true);
+            given(passwordEncoder.encode("newPass")).willReturn("{bcrypt}new");
+            given(userMapper.toDto(user)).willReturn(toDto(user));
+
+            userService.changePassword(id, request);
+
+            assertThat(user.getPassword()).isEqualTo("{bcrypt}new");
+            verify(passwordEncoder).encode("newPass");
+        }
+
+        @Test
+        void 현재_비밀번호_불일치_예외() {
+            UUID id = UUID.randomUUID();
+            User user = newUser("a@a.com", "nick", "{bcrypt}old");
+            UserPasswordChangeRequest request =
+                new UserPasswordChangeRequest("wrong!", "newPass");
+
+            given(userRepository.findById(id)).willReturn(Optional.of(user));
+            given(passwordEncoder.matches("wrong!", "{bcrypt}old")).willReturn(false);
+
+            assertThatThrownBy(() -> userService.changePassword(id, request))
+                .isInstanceOf(InvalidPasswordException.class);
+
+            assertThat(user.getPassword()).isEqualTo("{bcrypt}old");
+            verify(passwordEncoder, never()).encode(any());
+        }
+
+        @Test
+        void 존재하지_않는_사용자_예외() {
+            UUID id = UUID.randomUUID();
+            UserPasswordChangeRequest request =
+                new UserPasswordChangeRequest("oldPass", "newPass");
+
+            given(userRepository.findById(id)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.changePassword(id, request))
+                .isInstanceOf(UserNotFoundException.class);
+        }
+
+        @Test
+        void 삭제된_사용자_예외() {
+            UUID id = UUID.randomUUID();
+            User user = newUser("a@a.com", "nick", "{bcrypt}old");
+            user.softDelete();
+            UserPasswordChangeRequest request =
+                new UserPasswordChangeRequest("oldPass", "newPass");
+
+            given(userRepository.findById(id)).willReturn(Optional.of(user));
+
+            assertThatThrownBy(() -> userService.changePassword(id, request))
                 .isInstanceOf(UserNotFoundException.class);
         }
     }
