@@ -7,6 +7,7 @@ import static org.mockito.Mockito.times;
 
 import com.monew.domain.user.dto.UserDto;
 import com.monew.domain.user.dto.request.UserLoginRequest;
+import com.monew.domain.user.dto.request.UserPasswordChangeRequest;
 import com.monew.domain.user.dto.request.UserRegisterRequest;
 import com.monew.domain.user.dto.request.UserUpdateRequest;
 import com.monew.domain.user.service.UserService;
@@ -77,6 +78,19 @@ class UserControllerTest {
 
         ResponseEntity<UserDto> response = controller.update(userId, req);
 
+        assertThat(response.getBody()).isEqualTo(dto);
+    }
+
+    @Test
+    void changePassword_200_반환() {
+        UUID userId = UUID.randomUUID();
+        UserPasswordChangeRequest req = new UserPasswordChangeRequest("oldPass", "newPass");
+        UserDto dto = sampleDto();
+        given(userService.changePassword(userId, req)).willReturn(dto);
+
+        ResponseEntity<UserDto> response = controller.changePassword(userId, req);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(dto);
     }
 
