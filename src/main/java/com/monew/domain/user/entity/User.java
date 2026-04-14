@@ -44,6 +44,10 @@ public class User extends BaseUpdatableEntity {
         this.nickname = nickname;
     }
 
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
     public void softDelete() {
         this.deleted = true;
         this.deletedAt = Instant.now();

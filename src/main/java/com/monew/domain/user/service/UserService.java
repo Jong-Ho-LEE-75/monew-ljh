@@ -77,7 +77,12 @@ public class UserService {
 
     @Transactional
     public UserDto changePassword(UUID userId, UserPasswordChangeRequest request) {
-        throw new UnsupportedOperationException("미구현 — Red 단계");
+        User user = getActiveUser(userId);
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new InvalidPasswordException(user.getEmail());
+        }
+        user.changePassword(passwordEncoder.encode(request.newPassword()));
+        return userMapper.toDto(user);
     }
 
     @Transactional
