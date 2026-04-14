@@ -1,5 +1,9 @@
 # 모뉴 (MoNew)
 
+![CI](https://github.com/leejongho/monew/actions/workflows/test.yml/badge.svg)
+![Coverage](.github/badges/jacoco.svg)
+![Branches](.github/badges/branches.svg)
+
 > **MongoDB 및 PostgreSQL 백업 및 복구 시스템** — 여러 뉴스 API/RSS를 통합 수집하고 관심사 기반으로 맞춤 뉴스를 제공하는 Spring 기반 뉴스 통합 관리 서비스.
 
 ## 기술 스택
